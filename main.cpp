@@ -25,6 +25,7 @@
 #include <stdio.h>				// for printf functionality
 #include <stdlib.h>				// for exit functionality
 
+#include "TextureRect.h"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -42,6 +43,7 @@ using namespace std;
 // for later on in case the window gets resized.
 int WINDOW_WIDTH = 512, WINDOW_HEIGHT = 512;
 
+TextureRect testRect, testRect2;
 glm::vec2 lastMousePosition(0.0f, 0.0f);
 
 struct Bullet {
@@ -166,22 +168,6 @@ void setupOpenGL() {
 	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );	// set the clear color to black
 }
 
-void loadTextures() {
-    glEnable(GL_TEXTURE_2D);
-    GLint mapTexHandle = SOIL_load_OGL_texture("images/map15.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_COMPRESS_TO_DXT);
-    if(mapTexHandle == 0) {
-        cout << "Failed to load image! :(" << endl;
-        exit(-1);
-    }
-    glBindTexture(GL_TEXTURE_2D, mapTexHandle);    // I have no idea whats going on here, but it works!
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-    glDisable(GL_TEXTURE_2D);
-}
-
 //*************************************************************************************
 //
 // Rendering / Drawing Functions - this is where the magic happens!
@@ -201,19 +187,22 @@ void renderScene() {
         glVertex2f(10.0f, 100.0f);
     }; glEnd();
     
-    glm::vec2 bottomLeft(0, 0), topRight(100, 100);
+    /*glm::vec2 size(100.0f, 100.0f);
     glEnable(GL_TEXTURE_2D);
-	glBegin(GL_TRIANGLES); {
+    glBegin(GL_TRIANGLES); {
         glColor4f(1, 1, 1, 1);
-        glTexCoord2f(0, 0); glVertex2f(bottomLeft.x, bottomLeft.y);
-        glTexCoord2f(1, 0); glVertex2f(topRight.x, bottomLeft.y);
-        glTexCoord2f(0, 1); glVertex2f(bottomLeft.x, topRight.y);
+        glTexCoord2f(0, 0); glVertex2f(0.0f, 0.0f);
+        glTexCoord2f(1, 0); glVertex2f(size.x, 0.0f);
+        glTexCoord2f(0, 1); glVertex2f(0.0f, size.y);
         
-        glTexCoord2f(1, 0); glVertex2f(topRight.x, bottomLeft.y);
-        glTexCoord2f(1, 1); glVertex2f(topRight.x, topRight.y);
-        glTexCoord2f(0, 1); glVertex2f(bottomLeft.x, topRight.y);
-	}; glEnd();
-	glDisable(GL_TEXTURE_2D);
+        glTexCoord2f(1, 0); glVertex2f(size.x, 0.0f);
+        glTexCoord2f(1, 1); glVertex2f(size.x, size.y);
+        glTexCoord2f(0, 1); glVertex2f(0.0f, size.y);
+    }; glEnd();
+    glDisable(GL_TEXTURE_2D);*/
+    
+    testRect.draw();
+    testRect2.draw();
     
     for (const Bullet& b : bullets) {
         b.draw();
@@ -229,6 +218,8 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
             ++bulletIter;
         }
     }
+    testRect.rotation += 0.05f;
+    testRect2.rotation += 0.06f;
 }
 
 //*************************************************************************************
@@ -241,11 +232,19 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
 //		Really you should know what this is by now.  We will make use of the parameters later
 //
 int main( int argc, char* argv[] ) {
-	GLFWwindow *window = setupGLFW();	// initialize all of the GLFW specific information releated to OpenGL and our window
+	GLFWwindow *window = setupGLFW();	// initialize all of the GLFW specific information related to OpenGL and our window
 										// GLFW sets up our OpenGL context so must be done first
 	setupOpenGL();						// initialize all of the OpenGL specific information
     
-    loadTextures();
+    testRect.texture = loadTexture("map15.png");
+    testRect.position = glm::vec2(50.0f, 50.0f);
+    testRect.origin = glm::vec2(0.0f, 0.0f);
+    testRect.size = glm::vec2(100.0f, 100.0f);
+    
+    testRect2.texture = loadTexture("default.png");
+    testRect2.position = glm::vec2(200.0f, 100.0f);
+    testRect2.origin = glm::vec2(50.0f, 50.0f);
+    testRect2.size = glm::vec2(100.0f, 100.0f);
 
 	//  This is our draw loop - all rendering is done here.  We use a loop to keep the window open
 	//	until the user decides to close the window and quit the program.  Without a loop, the
