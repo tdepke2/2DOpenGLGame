@@ -1,4 +1,7 @@
 #include "TileMap.h"
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -26,38 +29,110 @@ int TileMap::getTile(int x, int y) const {
 void TileMap::setTile(int data, int x, int y) {
     _mapData[y][x] = data;
     unsigned int baseIndex = (y * _mapSize.x + x) * 4;
-    float texX = static_cast<float>(data % (_textureSize.x / _tileSize.x)) / _mapSize.x;
-    float texY = static_cast<float>(data / (_textureSize.y / _tileSize.y)) / _mapSize.y;
+    float texX = static_cast<float>(data % (_textureSize.x / _tileSize.x)) * 1.0f / (_textureSize.x / _tileSize.x);
+    float texY = static_cast<float>(data / (_textureSize.y / _tileSize.y)) / 1.0f / (_textureSize.y / _tileSize.y);
     _texVertices[baseIndex] = glm::vec2(texX, texY);
     _texVertices[baseIndex + 1] = glm::vec2(texX + 1.0f / (_textureSize.x / _tileSize.x), texY);
     _texVertices[baseIndex + 2] = glm::vec2(texX + 1.0f / (_textureSize.x / _tileSize.x), texY + 1.0f / (_textureSize.y / _tileSize.y));
     _texVertices[baseIndex + 3] = glm::vec2(texX, texY + 1.0f / (_textureSize.y / _tileSize.y));
 }
 
-void TileMap::loadMap(GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize, const glm::uvec2& mapSize) {
+void TileMap::loadMap(const string& filename, GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize) {
+    ifstream loadFile(filename);
+    if (!loadFile.is_open()) {
+        throw runtime_error("\"" + filename + "\": Unable to open level file.");
+    }
     _texture = textureHandle;
     _textureSize = textureSize;
     _tileSize = tileSize;
     _deleteMap();
     
-    _posVertices.reserve(mapSize.x * mapSize.y * 4);
-    _texVertices.resize(mapSize.x * mapSize.y * 4);
-    _mapSize = mapSize;
-    _mapData = new int*[_mapSize.y];
-    int tempCounter = 14;
-    for (unsigned int y = 0; y < _mapSize.y; ++y) {
-        _mapData[y] = new int[_mapSize.x];
-        for (unsigned int x = 0; x < _mapSize.x; ++x) {
-            float windowX = static_cast<float>(x * _tileSize.x);
-            float windowY = static_cast<float>(y * _tileSize.y);
-            _posVertices.push_back(glm::vec2(windowX, windowY));
-            _posVertices.push_back(glm::vec2(windowX + _tileSize.x, windowY));
-            _posVertices.push_back(glm::vec2(windowX + _tileSize.x, windowY + _tileSize.y));
-            _posVertices.push_back(glm::vec2(windowX, windowY + _tileSize.y));
-            setTile(tempCounter, x, y);
-            //++tempCounter;
+    float levelVersion;
+    string line;
+    int lineNumber = 0, numEntries = 0, currentY;
+    try {
+        while (getline(loadFile, line)) {
+            ++lineNumber;
+            vector<string> data = _parseCSV(line);
+            
+            if (data.size() == 1 && data[0].length() == 0) {
+                continue;
+            } else if (numEntries == 0 && data.size() == 2 && data[0] == "version") {
+                levelVersion = stof(data[1]);
+                if (levelVersion != 1.0f) {
+                    throw runtime_error("Invalid map version.");
+                }
+                ++numEntries;
+            } else if (numEntries == 1 && data.size() == 2 && data[0] == "name") {
+                levelName = data[1];
+                ++numEntries;
+            } else if (numEntries == 2 && data.size() == 3 && data[0] == "size") {    // Allocate size of the level.
+                _mapSize = glm::uvec2(stoul(data[1]), stoul(data[2]));
+                _mapData = new int*[_mapSize.y];
+                for (unsigned int y = 0; y < _mapSize.y; ++y) {
+                    _mapData[y] = new int[_mapSize.x];
+                    for (unsigned int x = 0; x < _mapSize.x; ++x) {
+                        float windowX = static_cast<float>(x * _tileSize.x);
+                        float windowY = static_cast<float>(y * _tileSize.y);
+                        _posVertices.push_back(glm::vec2(windowX, windowY));
+                        _posVertices.push_back(glm::vec2(windowX + _tileSize.x, windowY));
+                        _posVertices.push_back(glm::vec2(windowX + _tileSize.x, windowY + _tileSize.y));
+                        _posVertices.push_back(glm::vec2(windowX, windowY + _tileSize.y));
+                    }
+                }
+                _posVertices.reserve(_mapSize.x * _mapSize.y * 4);
+                _texVertices.resize(_mapSize.x * _mapSize.y * 4);
+                currentY = _mapSize.y - 1;
+                ++numEntries;
+            } else if (numEntries == 3 && data.size() == 1 && data[0] == "player:") {
+                ++numEntries;
+            } else if (numEntries == 4) {    // Parse data for the player.
+                if (data.size() == 1 && data[0] == "end") {
+                    ++numEntries;
+                } else {
+                    throw runtime_error("Unrecognized player data.");
+                }
+            } else if (numEntries == 5 && data.size() == 1 && data[0] == "entities:") {
+                ++numEntries;
+            } else if (numEntries == 6) {    // Parse data for all entities.
+                if (data.size() == 1 && data[0] == "end") {
+                    ++numEntries;
+                } else {
+                    throw runtime_error("Unrecognized entity data.");
+                }
+            } else if (numEntries == 7 && data.size() == 1 && data[0] == "data:") {
+                ++numEntries;
+            } else if (numEntries == 8) {    // Parse data for all custom data.
+                if (data.size() == 1 && data[0] == "end") {
+                    ++numEntries;
+                } else {
+                    throw runtime_error("Unrecognized custom data.");
+                }
+            } else if (numEntries == 9 && data.size() == 1 && data[0] == "tiles:") {
+                ++numEntries;
+            } else if (numEntries == 10) {    // Parse data for all tiles.
+                if (data.size() == 1 && data[0] == "end") {
+                    ++numEntries;
+                } else if (data.size() == _mapSize.x && currentY >= 0) {
+                    for (unsigned int x = 0; x < _mapSize.x; ++x) {
+                        setTile(stoi(data[x]), x, currentY);
+                    }
+                    --currentY;
+                } else {
+                    throw runtime_error("Unrecognized tile data.");
+                }
+            } else {
+                throw runtime_error("Invalid level data.");
+            }
         }
+    } catch (exception& ex) {
+        throw runtime_error("\"" + filename + "\" at line " + to_string(lineNumber) + ": " + ex.what());
     }
+    
+    if (numEntries != 11) {
+        throw runtime_error("\"" + filename + "\": Missing level data, end of file reached.");
+    }
+    loadFile.close();
 }
 
 void TileMap::draw() {
@@ -85,6 +160,36 @@ void TileMap::draw() {
         glDisable(GL_TEXTURE_2D);
         
     }; glMultMatrixf(&(glm::inverse(positionMtx))[0][0]);
+}
+
+vector<string> TileMap::_parseCSV(const string& str) {
+    vector<string> values;
+    if (str.length() > 0 && str[0] == '#') {
+        values.push_back("");
+        return values;
+    }
+    
+    size_t index = 0;
+    while (index < str.length() && str[index] != ',') {
+        ++index;
+    }
+    
+    vector<size_t> points;
+    points.push_back(index);
+    while (index < str.length()) {
+        ++index;
+        while (index < str.length() && str[index] != ',') {
+            ++index;
+        }
+        points.push_back(index);
+    }
+    
+    values.reserve(points.size() - 1);
+    values.push_back(str.substr(0, points[0]));
+    for (unsigned int i = 1; i < points.size(); ++i) {
+        values.push_back(str.substr(points[i - 1] + 1, points[i] - points[i - 1] - 1));
+    }
+    return values;
 }
 
 void TileMap::_deleteMap() {

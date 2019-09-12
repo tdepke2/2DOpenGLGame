@@ -31,7 +31,7 @@
 #include <cmath>
 #include <iostream>
 #include <list>
-#include <SOIL/SOIL.h>
+#include <stdexcept>
 
 using namespace std;
 
@@ -204,8 +204,8 @@ void renderScene() {
     glDisable(GL_TEXTURE_2D);*/
     
     testMap.draw();
-    testRect.draw();
-    testRect2.draw();
+    //testRect.draw();
+    //testRect2.draw();
     
     for (const Bullet& b : bullets) {
         b.draw();
@@ -239,54 +239,63 @@ int main( int argc, char* argv[] ) {
 										// GLFW sets up our OpenGL context so must be done first
 	setupOpenGL();						// initialize all of the OpenGL specific information
     
-    testRect.texture = loadTexture("map15.png");
-    testRect.position = glm::vec2(50.0f, 50.0f);
-    testRect.origin = glm::vec2(0.0f, 0.0f);
-    testRect.size = glm::vec2(100.0f, 100.0f);
-    
-    testRect2.texture = loadTexture("default.png");
-    testRect2.position = glm::vec2(200.0f, 100.0f);
-    testRect2.size = glm::vec2(100.0f, 100.0f);
-    testRect2.centerOrigin();
-    
-    testMap.loadMap(loadTexture("tileset.png"), glm::uvec2(256, 256), glm::uvec2(32, 32), glm::uvec2(8, 8));
-    testMap.setTile(0, 2, 1);
-
-	//  This is our draw loop - all rendering is done here.  We use a loop to keep the window open
-	//	until the user decides to close the window and quit the program.  Without a loop, the
-	//	window will display once and then the program exits.
-	while( !glfwWindowShouldClose(window) ) {
-		glDrawBuffer( GL_BACK );		// ensure we are drawing to the back buffer
-		glClear( GL_COLOR_BUFFER_BIT );	// clear the current color contents in the buffer
-
-		// update the projection matrix based on the window size
-		// the GL_PROJECTION matrix governs properties of the view coordinates;
-		// i.e. what gets seen - use an Orthographic projection that ranges
-		// from [0, windowWidth] in X and [0, windowHeight] in Y. (0,0) is the lower left.
-		glm::mat4 projMtx = glm::ortho( 0.0f, (GLfloat)WINDOW_WIDTH, 0.0f, (GLfloat)WINDOW_HEIGHT );
-		glMatrixMode( GL_PROJECTION );	// change to the Projection matrix
-		glLoadIdentity();				// set the matrix to be the identity
-		glMultMatrixf( &projMtx[0][0] );// load our orthographic projection matrix into OpenGL's projection matrix state
-
-		// Get the size of our framebuffer.  Ideally this should be the same dimensions as our window, but
-		// when using a Retina display the actual window can be larger than the requested window.  Therefore
-		// query what the actual size of the window we are rendering to is.
-		GLint framebufferWidth, framebufferHeight;
-		glfwGetFramebufferSize( window, &framebufferWidth, &framebufferHeight );
-
-		// update the viewport - tell OpenGL we want to render to the whole window
-		glViewport( 0, 0, framebufferWidth, framebufferHeight );
-
-		glMatrixMode( GL_MODELVIEW );	// make the ModelView matrix current to be modified by any transformations
-		glLoadIdentity();				// set the matrix to be the identity
-
-		renderScene();					// draw everything to the window
-
-		glfwSwapBuffers(window);		// flush the OpenGL commands and make sure they get rendered!
-		glfwPollEvents();				// check for any events and signal to redraw screen
+    try {
+        testRect.texture = loadTexture("map15.png");
+        testRect.position = glm::vec2(50.0f, 50.0f);
+        testRect.origin = glm::vec2(0.0f, 0.0f);
+        testRect.size = glm::vec2(100.0f, 100.0f);
         
-        nextTick(window);
-	}
+        testRect2.texture = loadTexture("default.png");
+        testRect2.position = glm::vec2(200.0f, 100.0f);
+        testRect2.size = glm::vec2(100.0f, 100.0f);
+        testRect2.centerOrigin();
+        
+        testMap.loadMap("levels/level0.csv", loadTexture("tileset.png"), glm::uvec2(256, 256), glm::uvec2(32, 32));
 
+        //  This is our draw loop - all rendering is done here.  We use a loop to keep the window open
+        //	until the user decides to close the window and quit the program.  Without a loop, the
+        //	window will display once and then the program exits.
+        while( !glfwWindowShouldClose(window) ) {
+            glDrawBuffer( GL_BACK );		// ensure we are drawing to the back buffer
+            glClear( GL_COLOR_BUFFER_BIT );	// clear the current color contents in the buffer
+
+            // update the projection matrix based on the window size
+            // the GL_PROJECTION matrix governs properties of the view coordinates;
+            // i.e. what gets seen - use an Orthographic projection that ranges
+            // from [0, windowWidth] in X and [0, windowHeight] in Y. (0,0) is the lower left.
+            glm::mat4 projMtx = glm::ortho( 0.0f, (GLfloat)WINDOW_WIDTH, 0.0f, (GLfloat)WINDOW_HEIGHT );
+            glMatrixMode( GL_PROJECTION );	// change to the Projection matrix
+            glLoadIdentity();				// set the matrix to be the identity
+            glMultMatrixf( &projMtx[0][0] );// load our orthographic projection matrix into OpenGL's projection matrix state
+
+            // Get the size of our framebuffer.  Ideally this should be the same dimensions as our window, but
+            // when using a Retina display the actual window can be larger than the requested window.  Therefore
+            // query what the actual size of the window we are rendering to is.
+            GLint framebufferWidth, framebufferHeight;
+            glfwGetFramebufferSize( window, &framebufferWidth, &framebufferHeight );
+
+            // update the viewport - tell OpenGL we want to render to the whole window
+            glViewport( 0, 0, framebufferWidth, framebufferHeight );
+
+            glMatrixMode( GL_MODELVIEW );	// make the ModelView matrix current to be modified by any transformations
+            glLoadIdentity();				// set the matrix to be the identity
+
+            renderScene();					// draw everything to the window
+
+            glfwSwapBuffers(window);		// flush the OpenGL commands and make sure they get rendered!
+            glfwPollEvents();				// check for any events and signal to redraw screen
+            
+            nextTick(window);
+        }
+    } catch (exception& ex) {
+        cout << "\n****************************************************" << endl;
+        cout << "* A fatal error has occurred, terminating program. *" << endl;
+        cout << "****************************************************" << endl;
+        cout << "Error: " << ex.what() << endl;
+        cout << "(Press enter)" << endl;
+        cin.get();
+        return -1;
+    }
+    
 	return 0;
 }

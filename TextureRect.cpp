@@ -1,6 +1,7 @@
 #include "TextureRect.h"
 #include <iostream>
 #include <SOIL/SOIL.h>
+#include <stdexcept>
 
 using namespace std;
 
@@ -8,8 +9,7 @@ GLint loadTexture(const string& filename) {
     glEnable(GL_TEXTURE_2D);
     GLint textureHandle = SOIL_load_OGL_texture(filename.c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_COMPRESS_TO_DXT);
     if(textureHandle == 0) {
-        cout << "Error: Unable to open texture file \"" << filename << "\"." << endl;
-        exit(-1);
+        throw runtime_error("\"" + filename + "\": Unable to open texture file.");
     }
     glBindTexture(GL_TEXTURE_2D, textureHandle);    // This is copied from WorldMap.h file from assignment 2. I have no idea whats going on here, but it works!
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
