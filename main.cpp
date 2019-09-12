@@ -26,6 +26,7 @@
 #include <stdlib.h>				// for exit functionality
 
 #include "TextureRect.h"
+#include "TileMap.h"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -44,6 +45,7 @@ using namespace std;
 int WINDOW_WIDTH = 512, WINDOW_HEIGHT = 512;
 
 TextureRect testRect, testRect2;
+TileMap testMap;
 glm::vec2 lastMousePosition(0.0f, 0.0f);
 
 struct Bullet {
@@ -201,6 +203,7 @@ void renderScene() {
     }; glEnd();
     glDisable(GL_TEXTURE_2D);*/
     
+    testMap.draw();
     testRect.draw();
     testRect2.draw();
     
@@ -245,6 +248,9 @@ int main( int argc, char* argv[] ) {
     testRect2.position = glm::vec2(200.0f, 100.0f);
     testRect2.size = glm::vec2(100.0f, 100.0f);
     testRect2.centerOrigin();
+    
+    testMap.loadMap(loadTexture("tileset.png"), glm::uvec2(256, 256), glm::uvec2(32, 32), glm::uvec2(8, 8));
+    testMap.setTile(0, 2, 1);
 
 	//  This is our draw loop - all rendering is done here.  We use a loop to keep the window open
 	//	until the user decides to close the window and quit the program.  Without a loop, the

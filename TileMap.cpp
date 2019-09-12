@@ -29,9 +29,9 @@ void TileMap::setTile(int data, int x, int y) {
     float texX = static_cast<float>(data % (_textureSize.x / _tileSize.x)) / _mapSize.x;
     float texY = static_cast<float>(data / (_textureSize.y / _tileSize.y)) / _mapSize.y;
     _texVertices[baseIndex] = glm::vec2(texX, texY);
-    _texVertices[baseIndex + 1] = glm::vec2(texX + 1.0f / _mapSize.x, texY);
-    _texVertices[baseIndex + 2] = glm::vec2(texX + 1.0f / _mapSize.x, texY + 1.0f / _mapSize.y);
-    _texVertices[baseIndex + 3] = glm::vec2(texX, texY + 1.0f / _mapSize.y);
+    _texVertices[baseIndex + 1] = glm::vec2(texX + 1.0f / (_textureSize.x / _tileSize.x), texY);
+    _texVertices[baseIndex + 2] = glm::vec2(texX + 1.0f / (_textureSize.x / _tileSize.x), texY + 1.0f / (_textureSize.y / _tileSize.y));
+    _texVertices[baseIndex + 3] = glm::vec2(texX, texY + 1.0f / (_textureSize.y / _tileSize.y));
 }
 
 void TileMap::loadMap(GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize, const glm::uvec2& mapSize) {
@@ -44,7 +44,7 @@ void TileMap::loadMap(GLint textureHandle, const glm::uvec2& textureSize, const 
     _texVertices.resize(mapSize.x * mapSize.y * 4);
     _mapSize = mapSize;
     _mapData = new int*[_mapSize.y];
-    int tempCounter = 0;
+    int tempCounter = 14;
     for (unsigned int y = 0; y < _mapSize.y; ++y) {
         _mapData[y] = new int[_mapSize.x];
         for (unsigned int x = 0; x < _mapSize.x; ++x) {

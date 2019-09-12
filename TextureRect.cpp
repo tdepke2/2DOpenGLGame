@@ -39,7 +39,6 @@ TextureRect::TextureRect(GLint textureHandle, const glm::vec2& position, const g
     origin = glm::vec2(0.0f, 0.0f);
     this->size = size;
     rotation = 0.0f;
-    cout << "handle is " << texture << ", size is " << this->size.x << " " << this->size.y << endl;
 }
 
 void TextureRect::centerOrigin() {
