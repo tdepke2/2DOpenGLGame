@@ -243,8 +243,8 @@ int main( int argc, char* argv[] ) {
     
     testRect2.texture = loadTexture("default.png");
     testRect2.position = glm::vec2(200.0f, 100.0f);
-    testRect2.origin = glm::vec2(50.0f, 50.0f);
     testRect2.size = glm::vec2(100.0f, 100.0f);
+    testRect2.centerOrigin();
 
 	//  This is our draw loop - all rendering is done here.  We use a loop to keep the window open
 	//	until the user decides to close the window and quit the program.  Without a loop, the

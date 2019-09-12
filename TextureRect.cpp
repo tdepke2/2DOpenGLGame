@@ -42,6 +42,11 @@ TextureRect::TextureRect(GLint textureHandle, const glm::vec2& position, const g
     cout << "handle is " << texture << ", size is " << this->size.x << " " << this->size.y << endl;
 }
 
+void TextureRect::centerOrigin() {
+    origin.x = size.x / 2.0f;
+    origin.y = size.y / 2.0f;
+}
+
 void TextureRect::draw() {
     glm::mat4 positionMtx = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0f));
     glMultMatrixf(&positionMtx[0][0]); {

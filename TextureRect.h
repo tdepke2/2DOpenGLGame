@@ -25,6 +25,7 @@ class TextureRect {
     TextureRect();
     TextureRect(const string& filename, const glm::vec2& position, const glm::vec2& size);
     TextureRect(GLint textureHandle, const glm::vec2& position, const glm::vec2& size);
+    void centerOrigin();
     void draw();
 };
 
