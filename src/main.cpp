@@ -196,7 +196,13 @@ void setupGame() {
     player.bodyAnimations.push_back(loadAnimation("survivor/shotgun/reload/survivor-reload_shotgun_0.png", 0, 19));
     player.bodyAnimations.push_back(loadAnimation("survivor/shotgun/shoot/survivor-shoot_shotgun_0.png", 0, 2));*/
     
+    player.feetAnimations.push_back(loadAnimation("survivor/feet/idle/survivor-idle_0.png", 0, 0));
+    player.feetAnimations.push_back(loadAnimation("survivor/feet/run/survivor-run_0.png", 0, 19));
+    player.feetAnimations.push_back(loadAnimation("survivor/feet/strafe_left/survivor-strafe_left_0.png", 0, 19));
+    player.feetAnimations.push_back(loadAnimation("survivor/feet/strafe_right/survivor-strafe_right_0.png", 0, 19));
+    
     player.setCurrentBody(4);
+    player.setCurrentFeet(0);
     player.position = glm::vec2(0.0f, 0.0f);//WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f);
     player.setSize(glm::vec2(100.0f, 100.0f));
     
@@ -217,7 +223,7 @@ void setupGame() {
 void renderScene() {
     glm::mat4 transMtx = glm::translate(glm::mat4(1.0f), glm::vec3(-player.position.x + WINDOW_WIDTH / 2.0f, -player.position.y + WINDOW_HEIGHT / 2.0f, 0.0f));
     glMultMatrixf(&transMtx[0][0]); {
-        glm::mat4 scaleMtx = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
+        glm::mat4 scaleMtx = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f));
         glMultMatrixf(&scaleMtx[0][0]); {
             levelMap.draw();
         }; glMultMatrixf(&(glm::inverse(scaleMtx))[0][0]);
@@ -269,8 +275,10 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
     
     if (fabs(player.velocity.x) > 1.0f || fabs(player.velocity.y) > 1.0f) {
         player.setCurrentBody(5);
+        player.setCurrentFeet(1);
     } else {
         player.setCurrentBody(4);
+        player.setCurrentFeet(0);
     }
     player.update();
     

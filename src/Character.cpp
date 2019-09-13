@@ -65,6 +65,10 @@ void Character::update() {
     if (_currentBodyNumber >= bodyAnimations[_currentBody].size()) {
         _currentBodyNumber = 0;
     }
+    ++_currentFeetNumber;
+    if (_currentFeetNumber >= feetAnimations[_currentFeet].size()) {
+        _currentFeetNumber = 0;
+    }
 }
 
 void Character::draw() {
@@ -74,6 +78,28 @@ void Character::draw() {
         glMultMatrixf(&rotateMtx[0][0]); {
             glm::mat4 originMtx = glm::translate(glm::mat4(1.0f), glm::vec3(-_origin.x, -_origin.y, 0.0f));
             glMultMatrixf(&originMtx[0][0]); {
+                
+                if (feetAnimations.size() > 0) {
+                    glm::mat4 scaleMtx = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 0.8f, 1.0f));
+                    glMultMatrixf(&scaleMtx[0][0]); {
+                        glm::mat4 transMtx = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 5.0f, 0.0f));
+                        glMultMatrixf(&transMtx[0][0]); {
+                            glBindTexture(GL_TEXTURE_2D, feetAnimations[_currentFeet][_currentFeetNumber]);
+                            glEnable(GL_TEXTURE_2D);
+                            glBegin(GL_TRIANGLES); {
+                                glColor4f(1, 1, 1, 1);
+                                glTexCoord2f(0, 0); glVertex2f(0.0f, 0.0f);
+                                glTexCoord2f(1, 0); glVertex2f(_size.x, 0.0f);
+                                glTexCoord2f(0, 1); glVertex2f(0.0f, _size.y);
+                                
+                                glTexCoord2f(1, 0); glVertex2f(_size.x, 0.0f);
+                                glTexCoord2f(1, 1); glVertex2f(_size.x, _size.y);
+                                glTexCoord2f(0, 1); glVertex2f(0.0f, _size.y);
+                            }; glEnd();
+                            glDisable(GL_TEXTURE_2D);
+                        }; glMultMatrixf(&(glm::inverse(transMtx))[0][0]);
+                    }; glMultMatrixf(&(glm::inverse(scaleMtx))[0][0]);
+                }
                 
                 glBindTexture(GL_TEXTURE_2D, bodyAnimations[_currentBody][_currentBodyNumber]);
                 glEnable(GL_TEXTURE_2D);
