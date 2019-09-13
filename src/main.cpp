@@ -171,6 +171,36 @@ GLFWwindow* setupGLFW() {
 //
 void setupOpenGL() {
 	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );	// set the clear color to black
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void setupGame() {
+    player.bodyAnimations.push_back(vector<GLint>(0));//loadAnimation("survivor/knife/idle/survivor-idle_knife_0.png", 0, 19));
+    player.bodyAnimations.push_back(vector<GLint>(0));//loadAnimation("survivor/knife/move/survivor-move_knife_0.png", 0, 19));
+    player.bodyAnimations.push_back(vector<GLint>(0));    // You can't reload your knife! (but it would be cool)
+    player.bodyAnimations.push_back(vector<GLint>(0));//loadAnimation("survivor/knife/meleeattack/survivor-meleeattack_knife_0.png", 0, 14));
+    
+    player.bodyAnimations.push_back(loadAnimation("survivor/handgun/idle/survivor-idle_handgun_0.png", 0, 19));
+    player.bodyAnimations.push_back(loadAnimation("survivor/handgun/move/survivor-move_handgun_0.png", 0, 19));
+    player.bodyAnimations.push_back(loadAnimation("survivor/handgun/reload/survivor-reload_handgun_0.png", 0, 14));
+    player.bodyAnimations.push_back(loadAnimation("survivor/handgun/shoot/survivor-shoot_handgun_0.png", 0, 2));
+    
+    /*player.bodyAnimations.push_back(loadAnimation("survivor/rifle/idle/survivor-idle_rifle_0.png", 0, 19));
+    player.bodyAnimations.push_back(loadAnimation("survivor/rifle/move/survivor-move_rifle_0.png", 0, 19));
+    player.bodyAnimations.push_back(loadAnimation("survivor/rifle/reload/survivor-reload_rifle_0.png", 0, 19));
+    player.bodyAnimations.push_back(loadAnimation("survivor/rifle/shoot/survivor-shoot_rifle_0.png", 0, 2));
+    
+    player.bodyAnimations.push_back(loadAnimation("survivor/shotgun/idle/survivor-idle_shotgun_0.png", 0, 19));
+    player.bodyAnimations.push_back(loadAnimation("survivor/shotgun/move/survivor-move_shotgun_0.png", 0, 19));
+    player.bodyAnimations.push_back(loadAnimation("survivor/shotgun/reload/survivor-reload_shotgun_0.png", 0, 19));
+    player.bodyAnimations.push_back(loadAnimation("survivor/shotgun/shoot/survivor-shoot_shotgun_0.png", 0, 2));*/
+    
+    player.setCurrentBody(4);
+    player.position = glm::vec2(0.0f, 0.0f);//WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f);
+    player.setSize(glm::vec2(100.0f, 100.0f));
+    
+    levelMap.loadMap("levels/level0.csv", loadTexture("tileset.png"), glm::uvec2(256, 256), glm::uvec2(32, 32));
 }
 
 //*************************************************************************************
@@ -185,16 +215,19 @@ void setupOpenGL() {
 //		This method will contain all of the objects to be drawn.
 //
 void renderScene() {
-    glm::mat4 transMtx = glm::translate(glm::mat4(1.0f), glm::vec3(-player.position.x, -player.position.y, 0.0f));
+    glm::mat4 transMtx = glm::translate(glm::mat4(1.0f), glm::vec3(-player.position.x + WINDOW_WIDTH / 2.0f, -player.position.y + WINDOW_HEIGHT / 2.0f, 0.0f));
     glMultMatrixf(&transMtx[0][0]); {
-        levelMap.draw();
+        glm::mat4 scaleMtx = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
+        glMultMatrixf(&scaleMtx[0][0]); {
+            levelMap.draw();
+        }; glMultMatrixf(&(glm::inverse(scaleMtx))[0][0]);
+        
+        for (const Bullet& b : bullets) {
+            b.draw();
+        }
+        
+        player.draw();
     }; glMultMatrixf(&(glm::inverse(transMtx))[0][0]);
-    
-    for (const Bullet& b : bullets) {
-        b.draw();
-    }
-    
-    player.draw();
 }
 
 void nextTick(GLFWwindow* window) {    // Update simulation objects.
@@ -234,10 +267,16 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
     player.position.x += player.velocity.x;
     player.position.y += player.velocity.y;
     
+    if (fabs(player.velocity.x) > 1.0f || fabs(player.velocity.y) > 1.0f) {
+        player.setCurrentBody(5);
+    } else {
+        player.setCurrentBody(4);
+    }
+    player.update();
+    
     if (WINDOW_WIDTH / 2.0f - lastMousePosition.x != 0.0f) {
         float lookAngle = atan((WINDOW_HEIGHT / 2.0f - (WINDOW_HEIGHT - lastMousePosition.y)) / (WINDOW_WIDTH / 2.0f - lastMousePosition.x)) + (WINDOW_WIDTH / 2.0f - lastMousePosition.x > 0.0f ? acos(-1.0f) : 0.0f);
-        player.direction = lookAngle;
-        player.body.rotation = lookAngle;
+        player.rotation = lookAngle;
     }
     
     for (auto bulletIter = bullets.begin(); bulletIter != bullets.end();) {
@@ -265,12 +304,7 @@ int main( int argc, char* argv[] ) {
 	setupOpenGL();						// initialize all of the OpenGL specific information
     
     try {
-        player.body.texture = loadTexture("map15.png");
-        player.body.position = glm::vec2(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f);
-        player.body.size = glm::vec2(100.0f, 100.0f);
-        player.body.centerOrigin();
-        
-        levelMap.loadMap("levels/level0.csv", loadTexture("tileset.png"), glm::uvec2(256, 256), glm::uvec2(32, 32));
+        setupGame();
 
         //  This is our draw loop - all rendering is done here.  We use a loop to keep the window open
         //	until the user decides to close the window and quit the program.  Without a loop, the

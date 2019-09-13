@@ -6,17 +6,17 @@
 using namespace std;
 
 GLint loadTexture(const string& filename) {
+    cout << "Loading \"" << filename << "\"" << endl;
     glEnable(GL_TEXTURE_2D);
-    GLint textureHandle = SOIL_load_OGL_texture(filename.c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_COMPRESS_TO_DXT);
+    GLint textureHandle = SOIL_load_OGL_texture(filename.c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT);
     if(textureHandle == 0) {
         throw runtime_error("\"" + filename + "\": Unable to open texture file.");
     }
-    glBindTexture(GL_TEXTURE_2D, textureHandle);    // This is copied from WorldMap.h file from assignment 2. I have no idea whats going on here, but it works!
+    glBindTexture(GL_TEXTURE_2D, textureHandle);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
     glDisable(GL_TEXTURE_2D);
     return textureHandle;
 }

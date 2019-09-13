@@ -11,17 +11,32 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "TextureRect.h"
+#include <string>
+#include <vector>
 
 using namespace std;
 
+vector<GLint> loadAnimation(string filename, int start, int stop);
+
 class Character {
     public:
-    TextureRect body;
+    vector<vector<GLint>> bodyAnimations, feetAnimations;
     glm::vec2 position, velocity;
-    float direction;
+    float rotation;
     
     Character();
+    const glm::vec2& getSize() const;
+    int getCurrentBody() const;
+    int getCurrentFeet() const;
+    void setSize(const glm::vec2& size);
+    void setCurrentBody(int bodyNumber);
+    void setCurrentFeet(int feetNumber);
+    void update();
     void draw();
+    
+    private:
+    glm::vec2 _size, _origin;
+    unsigned int _currentBody, _currentBodyNumber, _currentFeet, _currentFeetNumber;
 };
 
 #endif
