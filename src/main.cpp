@@ -7,7 +7,9 @@
  *  Author: Thomas Depke - Fall 2017
  *
  *  Description:
- *		
+ *		https://opengameart.org/content/animated-top-down-survivor-player
+ *      https://opengameart.org/content/desert-tileset-1
+ *      https://opengameart.org/content/animated-top-down-zombie
  */
 
 #include <GLFW/glfw3.h>		// include GLFW framework header
@@ -25,6 +27,7 @@
 #include <stdio.h>				// for printf functionality
 #include <stdlib.h>				// for exit functionality
 
+#include "Character.h"
 #include "TextureRect.h"
 #include "TileMap.h"
 #include <algorithm>
@@ -44,8 +47,8 @@ using namespace std;
 // for later on in case the window gets resized.
 int WINDOW_WIDTH = 512, WINDOW_HEIGHT = 512;
 
-TextureRect testRect, testRect2;
-TileMap testMap;
+Character player;
+TileMap levelMap;
 glm::vec2 lastMousePosition(0.0f, 0.0f);
 
 struct Bullet {
@@ -140,7 +143,7 @@ GLFWwindow* setupGLFW() {
 	glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );		// do not allow our window to be able to be resized
 
 	// create a window for a given size, with a given title
-	GLFWwindow *window = glfwCreateWindow( WINDOW_WIDTH, WINDOW_HEIGHT, "Half Life 2.5", NULL, NULL );
+	GLFWwindow *window = glfwCreateWindow( WINDOW_WIDTH, WINDOW_HEIGHT, "Top-down Zombies", NULL, NULL );
 	if( !window ) {
 		glfwTerminate();
 		exit(EXIT_FAILURE);
@@ -182,37 +185,61 @@ void setupOpenGL() {
 //		This method will contain all of the objects to be drawn.
 //
 void renderScene() {
-    glBegin(GL_TRIANGLES); {
-        glColor3ub(0, 0, 255);
-        glVertex2f(10.0f, 10.0f);
-        glVertex2f(100.0f, 10.0f);
-        glVertex2f(10.0f, 100.0f);
-    }; glEnd();
-    
-    /*glm::vec2 size(100.0f, 100.0f);
-    glEnable(GL_TEXTURE_2D);
-    glBegin(GL_TRIANGLES); {
-        glColor4f(1, 1, 1, 1);
-        glTexCoord2f(0, 0); glVertex2f(0.0f, 0.0f);
-        glTexCoord2f(1, 0); glVertex2f(size.x, 0.0f);
-        glTexCoord2f(0, 1); glVertex2f(0.0f, size.y);
-        
-        glTexCoord2f(1, 0); glVertex2f(size.x, 0.0f);
-        glTexCoord2f(1, 1); glVertex2f(size.x, size.y);
-        glTexCoord2f(0, 1); glVertex2f(0.0f, size.y);
-    }; glEnd();
-    glDisable(GL_TEXTURE_2D);*/
-    
-    testMap.draw();
-    //testRect.draw();
-    //testRect2.draw();
+    glm::mat4 transMtx = glm::translate(glm::mat4(1.0f), glm::vec3(-player.position.x, -player.position.y, 0.0f));
+    glMultMatrixf(&transMtx[0][0]); {
+        levelMap.draw();
+    }; glMultMatrixf(&(glm::inverse(transMtx))[0][0]);
     
     for (const Bullet& b : bullets) {
         b.draw();
     }
+    
+    player.draw();
 }
 
 void nextTick(GLFWwindow* window) {    // Update simulation objects.
+    glm::vec2 accel(0.0f, 0.0f);    // Check player movement.
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        accel.y += 0.2f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        accel.x -= 0.2f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        accel.y -= 0.2f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        accel.x += 0.2f;
+    }
+    
+    float maxVelocity = 3.0f;    // Move player.
+    if (accel.x != 0.0f) {
+        if (accel.x < 0.0f) {
+            player.velocity.x = max(player.velocity.x + accel.x, -maxVelocity);
+        } else {
+            player.velocity.x = min(player.velocity.x + accel.x, maxVelocity);
+        }
+    } else {
+        player.velocity.x *= 0.8f;
+    }
+    if (accel.y != 0.0f) {
+        if (accel.y < 0.0f) {
+            player.velocity.y = max(player.velocity.y + accel.y, -maxVelocity);
+        } else {
+            player.velocity.y = min(player.velocity.y + accel.y, maxVelocity);
+        }
+    } else {
+        player.velocity.y *= 0.8f;
+    }
+    player.position.x += player.velocity.x;
+    player.position.y += player.velocity.y;
+    
+    if (WINDOW_WIDTH / 2.0f - lastMousePosition.x != 0.0f) {
+        float lookAngle = atan((WINDOW_HEIGHT / 2.0f - (WINDOW_HEIGHT - lastMousePosition.y)) / (WINDOW_WIDTH / 2.0f - lastMousePosition.x)) + (WINDOW_WIDTH / 2.0f - lastMousePosition.x > 0.0f ? acos(-1.0f) : 0.0f);
+        player.direction = lookAngle;
+        player.body.rotation = lookAngle;
+    }
+    
     for (auto bulletIter = bullets.begin(); bulletIter != bullets.end();) {
         if (bulletIter->life <= 0) {
             bulletIter = bullets.erase(bulletIter);
@@ -221,8 +248,6 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
             ++bulletIter;
         }
     }
-    testRect.rotation += 0.05f;
-    testRect2.rotation += 0.06f;
 }
 
 //*************************************************************************************
@@ -240,17 +265,12 @@ int main( int argc, char* argv[] ) {
 	setupOpenGL();						// initialize all of the OpenGL specific information
     
     try {
-        testRect.texture = loadTexture("map15.png");
-        testRect.position = glm::vec2(50.0f, 50.0f);
-        testRect.origin = glm::vec2(0.0f, 0.0f);
-        testRect.size = glm::vec2(100.0f, 100.0f);
+        player.body.texture = loadTexture("map15.png");
+        player.body.position = glm::vec2(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f);
+        player.body.size = glm::vec2(100.0f, 100.0f);
+        player.body.centerOrigin();
         
-        testRect2.texture = loadTexture("default.png");
-        testRect2.position = glm::vec2(200.0f, 100.0f);
-        testRect2.size = glm::vec2(100.0f, 100.0f);
-        testRect2.centerOrigin();
-        
-        testMap.loadMap("levels/level0.csv", loadTexture("tileset.png"), glm::uvec2(256, 256), glm::uvec2(32, 32));
+        levelMap.loadMap("levels/level0.csv", loadTexture("tileset.png"), glm::uvec2(256, 256), glm::uvec2(32, 32));
 
         //  This is our draw loop - all rendering is done here.  We use a loop to keep the window open
         //	until the user decides to close the window and quit the program.  Without a loop, the

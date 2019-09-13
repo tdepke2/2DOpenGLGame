@@ -29,12 +29,16 @@ int TileMap::getTile(int x, int y) const {
 void TileMap::setTile(int data, int x, int y) {
     _mapData[y][x] = data;
     unsigned int baseIndex = (y * _mapSize.x + x) * 4;
-    float texX = static_cast<float>(data % (_textureSize.x / _tileSize.x)) * 1.0f / (_textureSize.x / _tileSize.x);
-    float texY = static_cast<float>(data / (_textureSize.y / _tileSize.y)) / 1.0f / (_textureSize.y / _tileSize.y);
-    _texVertices[baseIndex] = glm::vec2(texX, texY);
-    _texVertices[baseIndex + 1] = glm::vec2(texX + 1.0f / (_textureSize.x / _tileSize.x), texY);
-    _texVertices[baseIndex + 2] = glm::vec2(texX + 1.0f / (_textureSize.x / _tileSize.x), texY + 1.0f / (_textureSize.y / _tileSize.y));
-    _texVertices[baseIndex + 3] = glm::vec2(texX, texY + 1.0f / (_textureSize.y / _tileSize.y));
+    glm::vec2 extraTileOverlap(1.0f / _textureSize.x, 1.0f / _textureSize.y);    // One pixel of extra overlap to fix lines in map.
+    float texBottomLeftX = static_cast<float>(data % (_textureSize.x / _tileSize.x)) / (_textureSize.x / _tileSize.x) + extraTileOverlap.x;
+    float texBottomLeftY = static_cast<float>(data / (_textureSize.y / _tileSize.y)) / (_textureSize.y / _tileSize.y) + extraTileOverlap.y;
+    float texTopLeftX = texBottomLeftX + 1.0f / (_textureSize.x / _tileSize.x) - 2.0f * extraTileOverlap.x;
+    float texTopLeftY = texBottomLeftY + 1.0f / (_textureSize.y / _tileSize.y) - 2.0f * extraTileOverlap.y;
+    
+    _texVertices[baseIndex] = glm::vec2(texBottomLeftX, texBottomLeftY);
+    _texVertices[baseIndex + 1] = glm::vec2(texTopLeftX, texBottomLeftY);
+    _texVertices[baseIndex + 2] = glm::vec2(texTopLeftX, texTopLeftY);
+    _texVertices[baseIndex + 3] = glm::vec2(texBottomLeftX, texTopLeftY);
 }
 
 void TileMap::loadMap(const string& filename, GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize) {
