@@ -26,7 +26,7 @@ class TileMap {
     int getTile(int x, int y) const;
     void setTile(int data, int x, int y);
     void loadMap(const string& filename, GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize);
-    void draw();
+    void draw() const;
     
     private:
     GLint _texture;
@@ -37,7 +37,7 @@ class TileMap {
     
     static vector<string> _parseCSV(const string& str);    // Parse a line of a CSV file. Splits the line and returns as a vector of strings, there will always be at least one string in the vector. Comments must be on their own line and start with a "#".
     void _deleteMap();
-    void _makeGLCoord(int vertexIndex);
+    void _makeGLCoord(int vertexIndex) const;
 };
 
 #endif

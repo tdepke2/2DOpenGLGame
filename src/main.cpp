@@ -10,6 +10,7 @@
  *		https://opengameart.org/content/animated-top-down-survivor-player
  *      https://opengameart.org/content/desert-tileset-1
  *      https://opengameart.org/content/animated-top-down-zombie
+ *      https://prayingmantis.itch.io/
  */
 
 #include <GLFW/glfw3.h>		// include GLFW framework header
@@ -28,6 +29,7 @@
 #include <stdlib.h>				// for exit functionality
 
 #include "Character.h"
+#include "Enemy.h"
 #include "TextureRect.h"
 #include "TileMap.h"
 #include <algorithm>
@@ -52,7 +54,9 @@ using namespace std;
 int WINDOW_WIDTH = 768, WINDOW_HEIGHT = 768;
 
 Character player;
+list<Enemy> enemies;
 TileMap levelMap;
+vector<vector<GLint>> playerBodyAnimations, playerFeetAnimations, enemyAnimations;
 glm::vec2 lastMousePosition(0.0f, 0.0f);
 
 struct Bullet {
@@ -180,35 +184,47 @@ void setupOpenGL() {
 }
 
 void setupGame() {
-    player.bodyAnimations.push_back(vector<GLint>(0));//loadAnimation("survivor/knife/idle/survivor-idle_knife_0.png", 0, 19));
-    player.bodyAnimations.push_back(vector<GLint>(0));//loadAnimation("survivor/knife/move/survivor-move_knife_0.png", 0, 19));
-    player.bodyAnimations.push_back(vector<GLint>(0));    // You can't reload your knife! (but it would be cool)
-    player.bodyAnimations.push_back(vector<GLint>(0));//loadAnimation("survivor/knife/meleeattack/survivor-meleeattack_knife_0.png", 0, 14));
+    playerBodyAnimations.push_back(vector<GLint>(0));//loadAnimation("survivor/knife/idle/survivor-idle_knife_0.png", 0, 19));
+    playerBodyAnimations.push_back(vector<GLint>(0));//loadAnimation("survivor/knife/move/survivor-move_knife_0.png", 0, 19));
+    playerBodyAnimations.push_back(vector<GLint>(0));    // You can't reload your knife! (but it would be cool)
+    playerBodyAnimations.push_back(vector<GLint>(0));//loadAnimation("survivor/knife/meleeattack/survivor-meleeattack_knife_0.png", 0, 14));
     
-    player.bodyAnimations.push_back(loadAnimation("survivor/handgun/idle/survivor-idle_handgun_0.png", 0, 19));
-    player.bodyAnimations.push_back(loadAnimation("survivor/handgun/move/survivor-move_handgun_0.png", 0, 19));
-    /*player.bodyAnimations.push_back(loadAnimation("survivor/handgun/reload/survivor-reload_handgun_0.png", 0, 14));
-    player.bodyAnimations.push_back(loadAnimation("survivor/handgun/shoot/survivor-shoot_handgun_0.png", 0, 2));*/
+    playerBodyAnimations.push_back(loadAnimation("survivor/handgun/idle/survivor-idle_handgun_0.png", 0, 19));
+    playerBodyAnimations.push_back(loadAnimation("survivor/handgun/move/survivor-move_handgun_0.png", 0, 19));
+    /*playerBodyAnimations.push_back(loadAnimation("survivor/handgun/reload/survivor-reload_handgun_0.png", 0, 14));
+    playerBodyAnimations.push_back(loadAnimation("survivor/handgun/shoot/survivor-shoot_handgun_0.png", 0, 2));*/
     
-    /*player.bodyAnimations.push_back(loadAnimation("survivor/rifle/idle/survivor-idle_rifle_0.png", 0, 19));
-    player.bodyAnimations.push_back(loadAnimation("survivor/rifle/move/survivor-move_rifle_0.png", 0, 19));
-    player.bodyAnimations.push_back(loadAnimation("survivor/rifle/reload/survivor-reload_rifle_0.png", 0, 19));
-    player.bodyAnimations.push_back(loadAnimation("survivor/rifle/shoot/survivor-shoot_rifle_0.png", 0, 2));
+    /*playerBodyAnimations.push_back(loadAnimation("survivor/rifle/idle/survivor-idle_rifle_0.png", 0, 19));
+    playerBodyAnimations.push_back(loadAnimation("survivor/rifle/move/survivor-move_rifle_0.png", 0, 19));
+    playerBodyAnimations.push_back(loadAnimation("survivor/rifle/reload/survivor-reload_rifle_0.png", 0, 19));
+    playerBodyAnimations.push_back(loadAnimation("survivor/rifle/shoot/survivor-shoot_rifle_0.png", 0, 2));
     
-    player.bodyAnimations.push_back(loadAnimation("survivor/shotgun/idle/survivor-idle_shotgun_0.png", 0, 19));
-    player.bodyAnimations.push_back(loadAnimation("survivor/shotgun/move/survivor-move_shotgun_0.png", 0, 19));
-    player.bodyAnimations.push_back(loadAnimation("survivor/shotgun/reload/survivor-reload_shotgun_0.png", 0, 19));
-    player.bodyAnimations.push_back(loadAnimation("survivor/shotgun/shoot/survivor-shoot_shotgun_0.png", 0, 2));*/
+    playerBodyAnimations.push_back(loadAnimation("survivor/shotgun/idle/survivor-idle_shotgun_0.png", 0, 19));
+    playerBodyAnimations.push_back(loadAnimation("survivor/shotgun/move/survivor-move_shotgun_0.png", 0, 19));
+    playerBodyAnimations.push_back(loadAnimation("survivor/shotgun/reload/survivor-reload_shotgun_0.png", 0, 19));
+    playerBodyAnimations.push_back(loadAnimation("survivor/shotgun/shoot/survivor-shoot_shotgun_0.png", 0, 2));*/
     
-    player.feetAnimations.push_back(loadAnimation("survivor/feet/idle/survivor-idle_0.png", 0, 0));
-    player.feetAnimations.push_back(loadAnimation("survivor/feet/run/survivor-run_0.png", 0, 19));
-    player.feetAnimations.push_back(loadAnimation("survivor/feet/strafe_left/survivor-strafe_left_0.png", 0, 19));
-    player.feetAnimations.push_back(loadAnimation("survivor/feet/strafe_right/survivor-strafe_right_0.png", 0, 19));
+    playerFeetAnimations.push_back(loadAnimation("survivor/feet/idle/survivor-idle_0.png", 0, 0));
+    playerFeetAnimations.push_back(loadAnimation("survivor/feet/run/survivor-run_0.png", 0, 19));
+    playerFeetAnimations.push_back(loadAnimation("survivor/feet/strafe_left/survivor-strafe_left_0.png", 0, 19));
+    playerFeetAnimations.push_back(loadAnimation("survivor/feet/strafe_right/survivor-strafe_right_0.png", 0, 19));
     
-    player.setCurrentBody(4);
-    player.setCurrentFeet(0);
-    player.position = glm::vec2(0.0f, 0.0f);//WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f);
+    enemyAnimations.push_back(loadAnimation("zombie/skeleton-move_0.png", 0, 16));
+    enemyAnimations.push_back(loadAnimation("zombie/skeleton-attack_0.png", 0, 8));
+    
+    player.bodyAnimationsPtr = &playerBodyAnimations;
+    player.feetAnimationsPtr = &playerFeetAnimations;
+    player.setBody(4);
+    player.setFeet(0);
+    player.position = glm::vec2(0.0f, 0.0f);
     player.setSize(glm::vec2(100.0f, 100.0f));
+    
+    enemies.push_back(Enemy());
+    enemies.back().bodyAnimationsPtr = &enemyAnimations;
+    enemies.back().setBody(0);
+    enemies.back().position = glm::vec2(100.0f, 0.0f);
+    enemies.back().setSize(glm::vec2(130.0f, 130.0f));
+    enemies.back().targetPtr = &player;
     
     levelMap.loadMap("levels/level0.csv", loadTexture("desert_tileset.png"), glm::uvec2(448, 128), glm::uvec2(32, 32));
 }
@@ -237,6 +253,10 @@ void renderScene() {
         }
         
         player.draw();
+        
+        for (const Enemy& e : enemies) {
+            e.draw();
+        }
     }; glMultMatrixf(&(glm::inverse(transMtx))[0][0]);
 }
 
@@ -278,7 +298,7 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
     player.position.y += player.velocity.y;
     
     if (fabs(player.velocity.x) > 1.0f || fabs(player.velocity.y) > 1.0f) {
-        player.setCurrentBody(5);
+        player.setBody(5);
         float velocityAngle = 0.0f;
         if (player.velocity.x != 0.0f) {
             velocityAngle = atan(player.velocity.y / player.velocity.x) + (player.velocity.x > 0.0f ? 0.0f : PI);
@@ -290,19 +310,19 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
             angleBetween = 2.0f * PI + angleBetween;
         }
         if (fabs(angleBetween) < PI * 0.25f || fabs(angleBetween) > PI * 0.75f) {
-            player.setCurrentFeet(1);
+            player.setFeet(1);
         } else if (angleBetween > 0.0f) {
-            player.setCurrentFeet(3);
+            player.setFeet(3);
         } else {
-            player.setCurrentFeet(2);
+            player.setFeet(2);
         }
     } else {
-        player.setCurrentBody(4);
-        player.setCurrentFeet(0);
+        player.setBody(4);
+        player.setFeet(0);
     }
     player.update();
     
-    if (WINDOW_WIDTH / 2.0f - lastMousePosition.x != 0.0f) {
+    if (lastMousePosition.x - WINDOW_WIDTH / 2.0f != 0.0f) {
         float lookAngle = atan(((WINDOW_HEIGHT - lastMousePosition.y) - WINDOW_HEIGHT / 2.0f) / (lastMousePosition.x - WINDOW_WIDTH / 2.0f)) + (lastMousePosition.x - WINDOW_WIDTH / 2.0f > 0.0f ? 0.0f : PI);
         player.rotation = lookAngle;
     }
@@ -314,6 +334,10 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
             bulletIter->step();
             ++bulletIter;
         }
+    }
+    for (auto enemyIter = enemies.begin(); enemyIter != enemies.end();) {
+        enemyIter->update();
+        ++enemyIter;
     }
 }
 

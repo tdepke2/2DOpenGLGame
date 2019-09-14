@@ -30,7 +30,7 @@ void TileMap::setTile(int data, int x, int y) {
     _mapData[y][x] = data;
     unsigned int baseIndex = (y * _mapSize.x + x) * 4;
     glm::ivec2 tileMapSize(_textureSize.x / _tileSize.x, _textureSize.y / _tileSize.y);
-    glm::vec2 extraTileOverlap(1.0f / _textureSize.x, 1.0f / _textureSize.y);    // One pixel of extra overlap to fix lines in map.
+    glm::vec2 extraTileOverlap(0.5f / _textureSize.x, 0.5f / _textureSize.y);    // Half pixel of extra overlap to fix lines in map.
     
     float texBottomLeftX = static_cast<float>(data % tileMapSize.x) / tileMapSize.x + extraTileOverlap.x;
     float texBottomLeftY = static_cast<float>(data / tileMapSize.x) / tileMapSize.y + extraTileOverlap.y;
@@ -141,7 +141,7 @@ void TileMap::loadMap(const string& filename, GLint textureHandle, const glm::uv
     loadFile.close();
 }
 
-void TileMap::draw() {
+void TileMap::draw() const {
     glm::mat4 positionMtx = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0f));
     glMultMatrixf(&positionMtx[0][0]); {
         
@@ -209,7 +209,7 @@ void TileMap::_deleteMap() {
     _mapData = nullptr;
 }
 
-void TileMap::_makeGLCoord(int vertexIndex) {
+void TileMap::_makeGLCoord(int vertexIndex) const {
     glTexCoord2f(_texVertices[vertexIndex].x, _texVertices[vertexIndex].y);
     glVertex2f(_posVertices[vertexIndex].x, _posVertices[vertexIndex].y);
 }

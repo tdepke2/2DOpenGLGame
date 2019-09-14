@@ -21,6 +21,10 @@ GLint loadTexture(const string& filename) {
     return textureHandle;
 }
 
+bool checkCollisionAABB(glm::vec2 aBottomLeft, glm::vec2 aTopRight, glm::vec2 bBottomLeft, glm::vec2 bTopRight) {
+    return (aBottomLeft.x < bTopRight.x && aTopRight.x > bBottomLeft.x && aBottomLeft.y < bTopRight.y && aTopRight.y > bBottomLeft.y);
+}
+
 TextureRect::TextureRect() {
     texture = 0;
     position = glm::vec2(0.0f, 0.0f);
@@ -46,7 +50,7 @@ void TextureRect::centerOrigin() {
     origin.y = size.y / 2.0f;
 }
 
-void TextureRect::draw() {
+void TextureRect::draw() const {
     glm::mat4 positionMtx = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0f));
     glMultMatrixf(&positionMtx[0][0]); {
         glm::mat4 rotateMtx = glm::rotate(glm::mat4(1.0f), rotation, glm::vec3(0.0f, 0.0f, 1.0f));

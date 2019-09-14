@@ -15,6 +15,7 @@
 using namespace std;
 
 GLint loadTexture(const string& filename);
+bool checkCollisionAABB(glm::vec2 aBottomLeft, glm::vec2 aTopRight, glm::vec2 bBottomLeft, glm::vec2 bTopRight);
 
 class TextureRect {
     public:
@@ -26,7 +27,7 @@ class TextureRect {
     TextureRect(const string& filename, const glm::vec2& position, const glm::vec2& size);
     TextureRect(GLint textureHandle, const glm::vec2& position, const glm::vec2& size);
     void centerOrigin();
-    void draw();
+    void draw() const;
 };
 
 #endif

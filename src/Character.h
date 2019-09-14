@@ -20,19 +20,22 @@ vector<GLint> loadAnimation(string filename, int start, int stop);
 
 class Character {
     public:
-    vector<vector<GLint>> bodyAnimations, feetAnimations;
+    const vector<vector<GLint>>* bodyAnimationsPtr;
+    const vector<vector<GLint>>* feetAnimationsPtr;
     glm::vec2 position, velocity;
     float rotation;
     
     Character();
     const glm::vec2& getSize() const;
-    int getCurrentBody() const;
-    int getCurrentFeet() const;
+    unsigned int getBody() const;
+    unsigned int getFeet() const;
+    unsigned int getBodyNumber() const;
+    unsigned int getFeetNumber() const;
     void setSize(const glm::vec2& size);
-    void setCurrentBody(int bodyNumber);
-    void setCurrentFeet(int feetNumber);
+    void setBody(int bodyNumber);
+    void setFeet(int feetNumber);
     void update();
-    void draw();
+    void draw() const;
     
     private:
     glm::vec2 _size, _origin;
