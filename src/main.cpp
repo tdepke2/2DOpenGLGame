@@ -36,6 +36,10 @@
 #include <list>
 #include <stdexcept>
 
+#ifndef PI
+#define PI acos(-1.0f)
+#endif
+
 using namespace std;
 
 //*************************************************************************************
@@ -45,7 +49,7 @@ using namespace std;
 // global variables to keep track of window width and height.
 // set to initial values for convenience, but we need variables
 // for later on in case the window gets resized.
-int WINDOW_WIDTH = 512, WINDOW_HEIGHT = 512;
+int WINDOW_WIDTH = 768, WINDOW_HEIGHT = 768;
 
 Character player;
 TileMap levelMap;
@@ -183,8 +187,8 @@ void setupGame() {
     
     player.bodyAnimations.push_back(loadAnimation("survivor/handgun/idle/survivor-idle_handgun_0.png", 0, 19));
     player.bodyAnimations.push_back(loadAnimation("survivor/handgun/move/survivor-move_handgun_0.png", 0, 19));
-    player.bodyAnimations.push_back(loadAnimation("survivor/handgun/reload/survivor-reload_handgun_0.png", 0, 14));
-    player.bodyAnimations.push_back(loadAnimation("survivor/handgun/shoot/survivor-shoot_handgun_0.png", 0, 2));
+    /*player.bodyAnimations.push_back(loadAnimation("survivor/handgun/reload/survivor-reload_handgun_0.png", 0, 14));
+    player.bodyAnimations.push_back(loadAnimation("survivor/handgun/shoot/survivor-shoot_handgun_0.png", 0, 2));*/
     
     /*player.bodyAnimations.push_back(loadAnimation("survivor/rifle/idle/survivor-idle_rifle_0.png", 0, 19));
     player.bodyAnimations.push_back(loadAnimation("survivor/rifle/move/survivor-move_rifle_0.png", 0, 19));
@@ -206,7 +210,7 @@ void setupGame() {
     player.position = glm::vec2(0.0f, 0.0f);//WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f);
     player.setSize(glm::vec2(100.0f, 100.0f));
     
-    levelMap.loadMap("levels/level0.csv", loadTexture("tileset.png"), glm::uvec2(256, 256), glm::uvec2(32, 32));
+    levelMap.loadMap("levels/level0.csv", loadTexture("desert_tileset.png"), glm::uvec2(448, 128), glm::uvec2(32, 32));
 }
 
 //*************************************************************************************
@@ -223,7 +227,7 @@ void setupGame() {
 void renderScene() {
     glm::mat4 transMtx = glm::translate(glm::mat4(1.0f), glm::vec3(-player.position.x + WINDOW_WIDTH / 2.0f, -player.position.y + WINDOW_HEIGHT / 2.0f, 0.0f));
     glMultMatrixf(&transMtx[0][0]); {
-        glm::mat4 scaleMtx = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f));
+        glm::mat4 scaleMtx = glm::scale(glm::mat4(1.0f), glm::vec3(3.0f, 3.0f, 1.0f));//2.0f, 2.0f, 1.0f));
         glMultMatrixf(&scaleMtx[0][0]); {
             levelMap.draw();
         }; glMultMatrixf(&(glm::inverse(scaleMtx))[0][0]);
@@ -275,7 +279,23 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
     
     if (fabs(player.velocity.x) > 1.0f || fabs(player.velocity.y) > 1.0f) {
         player.setCurrentBody(5);
-        player.setCurrentFeet(1);
+        float velocityAngle = 0.0f;
+        if (player.velocity.x != 0.0f) {
+            velocityAngle = atan(player.velocity.y / player.velocity.x) + (player.velocity.x > 0.0f ? 0.0f : PI);
+        }
+        float angleBetween = player.rotation - velocityAngle;    // Angle between player velocity and rotation, positive if velocity is to the right of look angle, negative otherwise.
+        if (angleBetween > PI) {
+            angleBetween = -2.0f * PI + angleBetween;
+        } else if (angleBetween < -PI) {
+            angleBetween = 2.0f * PI + angleBetween;
+        }
+        if (fabs(angleBetween) < PI * 0.25f || fabs(angleBetween) > PI * 0.75f) {
+            player.setCurrentFeet(1);
+        } else if (angleBetween > 0.0f) {
+            player.setCurrentFeet(3);
+        } else {
+            player.setCurrentFeet(2);
+        }
     } else {
         player.setCurrentBody(4);
         player.setCurrentFeet(0);
@@ -283,7 +303,7 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
     player.update();
     
     if (WINDOW_WIDTH / 2.0f - lastMousePosition.x != 0.0f) {
-        float lookAngle = atan((WINDOW_HEIGHT / 2.0f - (WINDOW_HEIGHT - lastMousePosition.y)) / (WINDOW_WIDTH / 2.0f - lastMousePosition.x)) + (WINDOW_WIDTH / 2.0f - lastMousePosition.x > 0.0f ? acos(-1.0f) : 0.0f);
+        float lookAngle = atan(((WINDOW_HEIGHT - lastMousePosition.y) - WINDOW_HEIGHT / 2.0f) / (lastMousePosition.x - WINDOW_WIDTH / 2.0f)) + (lastMousePosition.x - WINDOW_WIDTH / 2.0f > 0.0f ? 0.0f : PI);
         player.rotation = lookAngle;
     }
     

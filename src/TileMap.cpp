@@ -29,11 +29,13 @@ int TileMap::getTile(int x, int y) const {
 void TileMap::setTile(int data, int x, int y) {
     _mapData[y][x] = data;
     unsigned int baseIndex = (y * _mapSize.x + x) * 4;
+    glm::ivec2 tileMapSize(_textureSize.x / _tileSize.x, _textureSize.y / _tileSize.y);
     glm::vec2 extraTileOverlap(1.0f / _textureSize.x, 1.0f / _textureSize.y);    // One pixel of extra overlap to fix lines in map.
-    float texBottomLeftX = static_cast<float>(data % (_textureSize.x / _tileSize.x)) / (_textureSize.x / _tileSize.x) + extraTileOverlap.x;
-    float texBottomLeftY = static_cast<float>(data / (_textureSize.y / _tileSize.y)) / (_textureSize.y / _tileSize.y) + extraTileOverlap.y;
-    float texTopLeftX = texBottomLeftX + 1.0f / (_textureSize.x / _tileSize.x) - 2.0f * extraTileOverlap.x;
-    float texTopLeftY = texBottomLeftY + 1.0f / (_textureSize.y / _tileSize.y) - 2.0f * extraTileOverlap.y;
+    
+    float texBottomLeftX = static_cast<float>(data % tileMapSize.x) / tileMapSize.x + extraTileOverlap.x;
+    float texBottomLeftY = static_cast<float>(data / tileMapSize.x) / tileMapSize.y + extraTileOverlap.y;
+    float texTopLeftX = texBottomLeftX + 1.0f / tileMapSize.x - 2.0f * extraTileOverlap.x;
+    float texTopLeftY = texBottomLeftY + 1.0f / tileMapSize.y - 2.0f * extraTileOverlap.y;
     
     _texVertices[baseIndex] = glm::vec2(texBottomLeftX, texBottomLeftY);
     _texVertices[baseIndex + 1] = glm::vec2(texTopLeftX, texBottomLeftY);

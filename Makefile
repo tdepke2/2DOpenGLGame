@@ -21,8 +21,8 @@
 ##
 ########################################
 
-TARGET = a2
-OBJECTS = main.o
+TARGET = sq1
+OBJECTS = src/main.o src/Character.o src/TextureRect.o src/TileMap.o
 
 LOCAL_INC_PATH = /Users/jpaone/Desktop/include
 LOCAL_LIB_PATH = /Users/jpaone/Desktop/lib
@@ -126,4 +126,4 @@ $(TARGET): $(OBJECTS)
 	$(CXX) $(CFLAGS) -o $@ $^ $(LIBPATH) $(LIBS)
 
 # DEPENDENCIES
-main.o: main.cpp WorldMap.h
+main.o: main.cpp
