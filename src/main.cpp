@@ -32,6 +32,7 @@
 
 #include "Character.h"
 #include "Enemy.h"
+#include "Item.h"
 #include "Projectile.h"
 #include "TextureRect.h"
 #include "TileMap.h"
@@ -59,18 +60,25 @@ using namespace std;
 // set to initial values for convenience, but we need variables
 // for later on in case the window gets resized.
 int WINDOW_WIDTH = 768, WINDOW_HEIGHT = 768;
+const int ENEMY_CAP = 500;    // Max number of enemies on screen at a time.
 
-Character player;
+Character player;    // Ok ok so this is way too many globals, next time I will use a Game class to manage this.
 list<Enemy> enemies;
-vector<glm::vec2> spawners;
 list<Projectile> projectiles;
-TileMap levelMap, textBottomMap;
+TileMap levelMap, textBottomMap, textCenterMap, textTopMap;
+vector<vector<glm::vec2>> levelPositionsData;
+Item pistolItem, rifleItem, shotgunItem;
+list<Item> itemDrops;
 vector<vector<GLint>> playerBodyAnimations, playerFeetAnimations, enemyAnimations;
 GLint spriteTextures, fontTexture;
 vector<pair<int, int>> weaponAmmo, maximumAmmo;
 vector<int> weaponCooldown;
-int weaponCooldownCounter;
+int weaponCooldownCounter, playerCash, playerScore, redFlashAlpha;
+int roundNumber, roundCooldownCounter, enemiesRemaining, startOfRoundCooldown;
+bool gameOver;
 glm::vec2 lastMousePosition(0.0f, 0.0f);
+
+void setupGame();
 
 //*************************************************************************************
 //
@@ -84,6 +92,35 @@ void keyboard_callback( GLFWwindow *win, int key, int scancode, int action, int 
     if (key == GLFW_KEY_R && action == GLFW_PRESS) {
         if (weaponCooldownCounter == 0 && weaponAmmo[player.getBody() / 4].first < maximumAmmo[player.getBody() / 4].first && weaponAmmo[player.getBody() / 4].second > 0) {
             player.setBody((player.getBody() / 4) * 4 + 2);
+        }
+    } else if (key == GLFW_KEY_E && action == GLFW_PRESS) {
+        if (weaponAmmo[player.getBody() / 4].first < maximumAmmo[player.getBody() / 4].first || weaponAmmo[player.getBody() / 4].second < maximumAmmo[player.getBody() / 4].second) {
+            if (sqrt(pow(player.position.x - pistolItem.position.x, 2.0f) + pow(player.position.y - pistolItem.position.y, 2.0f)) < 100.0f) {
+                if (playerCash >= 10) {
+                    playerCash -= 10;
+                    weaponAmmo[1].first = maximumAmmo[1].first;
+                    weaponAmmo[1].second = maximumAmmo[1].second;
+                    player.setBody(4);
+                }
+            } else if (sqrt(pow(player.position.x - rifleItem.position.x, 2.0f) + pow(player.position.y - rifleItem.position.y, 2.0f)) < 100.0f) {
+                if (playerCash >= 90) {
+                    playerCash -= 90;
+                    weaponAmmo[2].first = maximumAmmo[2].first;
+                    weaponAmmo[2].second = maximumAmmo[2].second;
+                    player.setBody(8);
+                }
+            } else if (sqrt(pow(player.position.x - shotgunItem.position.x, 2.0f) + pow(player.position.y - shotgunItem.position.y, 2.0f)) < 100.0f) {
+                if (playerCash >= 80) {
+                    playerCash -= 80;
+                    weaponAmmo[3].first = maximumAmmo[3].first;
+                    weaponAmmo[3].second = maximumAmmo[3].second;
+                    player.setBody(12);
+                }
+            }
+        }
+    } else if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
+        if (gameOver) {
+            setupGame();
         }
     }
 }
@@ -100,7 +137,11 @@ void cursor_callback( GLFWwindow *window, double x, double y ) {
 }
 
 void scroll_callback( GLFWwindow* window, double xoffset, double yoffset) {
-    player.setBody(((player.getBody() / 4 + static_cast<int>(-yoffset)) % 4) * 4);
+    int currentWeapon = (player.getBody() / 4 + static_cast<int>(-yoffset)) % 4;
+    while (currentWeapon != 0 && weaponAmmo[currentWeapon].first == 0 && weaponAmmo[currentWeapon].second == 0) {
+        currentWeapon = (currentWeapon + (yoffset < 0.0 ? 1 : -1)) % 4;
+    }
+    player.setBody(currentWeapon * 4);
 }
 
 //*************************************************************************************
@@ -166,7 +207,7 @@ void setupOpenGL() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void setupGame() {
+void loadResources() {    // Load file resources for textures/fonts/etc.
     srand(static_cast<unsigned int>(time(NULL)));    // Still using rand() in 2019? Thats a big no no, oh well.
     spriteTextures = loadTexture("spritesheet.png");
     fontTexture = loadTexture("oldschool_font.png");
@@ -197,41 +238,78 @@ void setupGame() {
     playerFeetAnimations.push_back(loadAnimation("survivor/feet/strafe_right/survivor-strafe_right_0.png", 0, 0));//19));
     
     enemyAnimations.push_back(loadAnimation("zombie/skeleton-move_0.png", 0, 0));//16));
-    enemyAnimations.push_back(loadAnimation("zombie/skeleton-attack_0.png", 0, 0));//8));
+    enemyAnimations.push_back(loadAnimation("zombie/skeleton-attack_0.png", 0, 8));
     enemyAnimations.push_back(vector<GLint>(1, loadTexture("zombie/splatter.png")));
     
     player.bodyAnimationsPtr = &playerBodyAnimations;
     player.feetAnimationsPtr = &playerFeetAnimations;
+    
+    levelPositionsData = levelMap.loadMap("levels/level0.csv", loadTexture("desert_tileset.png"), glm::uvec2(448, 128), glm::uvec2(32, 32));
+    
+    pistolItem = Item(spriteTextures, levelPositionsData[2][0], glm::vec2(160.0f, 80.0f), Item::PISTOL);
+    pistolItem.labelTextMap.loadFont(fontTexture, glm::uvec2(504, 216), glm::uvec2(28, 36));
+    pistolItem.labelTextMap.loadText("Cash: $10");
+    pistolItem.labelTextMap.color = glm::uvec4(127, 127, 127, 255);
+    pistolItem.drawLabel = true;
+    
+    rifleItem = Item(spriteTextures, levelPositionsData[2][1], glm::vec2(160.0f, 80.0f), Item::RIFLE);
+    rifleItem.labelTextMap.loadFont(fontTexture, glm::uvec2(504, 216), glm::uvec2(28, 36));
+    rifleItem.labelTextMap.loadText("Cash: $90");
+    rifleItem.labelTextMap.color = glm::uvec4(127, 127, 127, 255);
+    rifleItem.drawLabel = true;
+    
+    shotgunItem = Item(spriteTextures, levelPositionsData[2][2], glm::vec2(160.0f, 80.0f), Item::SHOTGUN);
+    shotgunItem.labelTextMap.loadFont(fontTexture, glm::uvec2(504, 216), glm::uvec2(28, 36));
+    shotgunItem.labelTextMap.loadText("Cash: $80");
+    shotgunItem.labelTextMap.color = glm::uvec4(127, 127, 127, 255);
+    shotgunItem.drawLabel = true;
+    
+    textBottomMap.loadFont(fontTexture, glm::uvec2(504, 216), glm::uvec2(28, 36));
+    textCenterMap.loadFont(fontTexture, glm::uvec2(504, 216), glm::uvec2(28, 36));
+    textCenterMap.color = glm::uvec4(255, 0, 0, 255);
+    textTopMap.loadFont(fontTexture, glm::uvec2(504, 216), glm::uvec2(28, 36));
+    textTopMap.color = glm::uvec4(0, 0, 255, 255);
+}
+
+void setupGame() {
+    player.position = levelPositionsData[0][0];
     player.setBody(4);
     player.setFeet(0);
-    player.position = glm::vec2(0.0f, 0.0f);
     player.setSize(glm::vec2(110.0f, 100.0f));
+    player.health = 100;
     
-    weaponAmmo.push_back(pair<int, int>(0, 0));
-    weaponAmmo.push_back(pair<int, int>(10, 30));
-    weaponAmmo.push_back(pair<int, int>(1000000, 100));
-    weaponAmmo.push_back(pair<int, int>(5, 60));
+    enemies.clear();
+    projectiles.clear();
+    itemDrops.clear();
+    
+    maximumAmmo.clear();
     maximumAmmo.push_back(pair<int, int>(0, 0));
     maximumAmmo.push_back(pair<int, int>(10, 30));
     maximumAmmo.push_back(pair<int, int>(20, 100));
     maximumAmmo.push_back(pair<int, int>(5, 60));
+    weaponAmmo.clear();
+    weaponAmmo.push_back(pair<int, int>(0, 0));
+    weaponAmmo.push_back(maximumAmmo[1]);
+    weaponAmmo.push_back(pair<int, int>(0, 0));
+    weaponAmmo.push_back(pair<int, int>(0, 0));
     weaponCooldown.push_back(20);
     weaponCooldown.push_back(15);
     weaponCooldown.push_back(10);
     weaponCooldown.push_back(25);
     weaponCooldownCounter = 0;
     
-    enemies.push_back(Enemy());
-    enemies.back().bodyAnimationsPtr = &enemyAnimations;
-    enemies.back().setBody(0);
-    enemies.back().position = glm::vec2(100.0f, 0.0f);
-    enemies.back().setSize(glm::vec2(130.0f, 130.0f));
-    enemies.back().health = 100;
-    enemies.back().targetPtr = &player;
-    enemies.back().speed = 3.0f;
+    textBottomMap.clearText();
+    textCenterMap.clearText();
+    textTopMap.clearText();
     
-    levelMap.loadMap("levels/level0.csv", loadTexture("desert_tileset.png"), glm::uvec2(448, 128), glm::uvec2(32, 32));
-    textBottomMap.loadFont(fontTexture, glm::uvec2(504, 216), glm::uvec2(28, 36));
+    playerCash = 0;
+    playerScore = 0;
+    redFlashAlpha = 0;
+    roundNumber = 0;
+    roundCooldownCounter = 0;
+    enemiesRemaining = 0;
+    startOfRoundCooldown = 150;
+    gameOver = false;
 }
 
 //*************************************************************************************
@@ -255,6 +333,14 @@ void renderScene() {
             enemy.draw();
         }
         
+        pistolItem.draw();
+        rifleItem.draw();
+        shotgunItem.draw();
+        
+        for (const Item& item : itemDrops) {
+            item.draw();
+        }
+        
         for (const Projectile& projectile : projectiles) {
             projectile.draw();
         }
@@ -262,10 +348,39 @@ void renderScene() {
         player.draw();
     }; glMultMatrixf(&(glm::inverse(transMtx))[0][0]);
     
-    glm::mat4 scaleMtx2 = glm::scale(glm::mat4(1.0f), glm::vec3(0.7f, 0.7f, 1.0f));
+    glBegin(GL_TRIANGLE_STRIP); {    // Red flash when player takes damage.
+        glColor4ub(199, 0, 0, redFlashAlpha);
+        glVertex2f(0.0f, static_cast<float>(WINDOW_HEIGHT));
+        glVertex2f(0.0f, 0.0f);
+        glVertex2f(static_cast<float>(WINDOW_WIDTH), static_cast<float>(WINDOW_HEIGHT));
+        glVertex2f(static_cast<float>(WINDOW_WIDTH), 0.0f);
+    }; glEnd();
+    
+    glBegin(GL_TRIANGLE_STRIP); {    // Draw HUD.
+        glColor3ub(0, 0, 0);
+        glVertex2f(0.0f, 25.0f);
+        glVertex2f(0.0f, 0.0f);
+        glVertex2f(static_cast<float>(WINDOW_WIDTH), 25.0f);
+        glVertex2f(static_cast<float>(WINDOW_WIDTH), 0.0f);
+    }; glEnd();
+    
+    glm::mat4 scaleMtx2 = glm::scale(glm::mat4(1.0f), glm::vec3(0.6f, 0.6f, 1.0f));
     glMultMatrixf(&scaleMtx2[0][0]); {
         textBottomMap.draw();
     }; glMultMatrixf(&(glm::inverse(scaleMtx2))[0][0]);
+    
+    glm::mat4 transMtx2 = glm::translate(glm::mat4(1.0f), glm::vec3(280.0f, 450.0f, 0.0f));
+    glMultMatrixf(&transMtx2[0][0]); {
+        textCenterMap.draw();
+    }; glMultMatrixf(&(glm::inverse(transMtx2))[0][0]);
+    
+    glm::mat4 transMtx3 = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 745.0f, 0.0f));
+    glMultMatrixf(&transMtx3[0][0]); {
+        glm::mat4 scaleMtx3 = glm::scale(glm::mat4(1.0f), glm::vec3(0.6f, 0.6f, 1.0f));
+        glMultMatrixf(&scaleMtx3[0][0]); {
+            textTopMap.draw();
+        }; glMultMatrixf(&(glm::inverse(scaleMtx3))[0][0]);
+    }; glMultMatrixf(&(glm::inverse(transMtx3))[0][0]);
 }
 
 string intToString(int x, unsigned int width) {
@@ -277,7 +392,20 @@ string intToString(int x, unsigned int width) {
     }
 }
 
+void nextRound() {
+    ++roundNumber;
+    enemiesRemaining = roundNumber * 5 + 10;
+    startOfRoundCooldown = 200;
+    textCenterMap.loadText("Round " + to_string(roundNumber) + "      ");
+    if (roundNumber != 1) {
+        playerScore += roundNumber * 10;
+    }
+}
+
 void nextTick(GLFWwindow* window) {    // Update simulation objects.
+    if (gameOver) {
+        return;
+    }
     glm::vec2 accel(0.0f, 0.0f);    // Check player movement.
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
         accel.y += 0.2f;
@@ -292,7 +420,7 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
         accel.x += 0.2f;
     }
     
-    float maxVelocity = 3.0f;    // Move player.
+    float maxVelocity = 30.0f;    // Move player.
     if (accel.x != 0.0f) {
         if (accel.x < 0.0f) {
             player.velocity.x = max(player.velocity.x + accel.x, -maxVelocity);
@@ -312,7 +440,17 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
         player.velocity.y *= 0.8f;
     }
     player.position.x += player.velocity.x;
+    if (player.position.x < 910.0f) {
+        player.position.x = 910.0f;
+    } else if (player.position.x > 3700.0f) {
+        player.position.x = 3700.0f;
+    }
     player.position.y += player.velocity.y;
+    if (player.position.y < 910.0f) {
+        player.position.y = 910.0f;
+    } else if (player.position.y > 3700.0f) {
+        player.position.y = 3700.0f;
+    }
     
     if (fabs(player.velocity.x) > 1.0f || fabs(player.velocity.y) > 1.0f) {
         if (player.getBody() % 4 == 0) {
@@ -390,23 +528,80 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
         player.setBody(player.getBody() - 2);
     }
     
-    textBottomMap.loadText("Health:" + intToString(player.health, 4) + "      Ammo:" + intToString(weaponAmmo[player.getBody() / 4].first, 4) + "/" + intToString(weaponAmmo[player.getBody() / 4].second, 4));
-    
     for (auto projectileIter = projectiles.begin(); projectileIter != projectiles.end();) {
         if (projectileIter->lifespan <= 0) {
             projectileIter = projectiles.erase(projectileIter);
         } else {
-            projectileIter->update(enemies);
+            int numPoints = projectileIter->update(enemies);
+            playerCash += numPoints;
+            playerScore += numPoints * 3;
             ++projectileIter;
         }
     }
+    
+    bool enemiesAlive = false;
     for (auto enemyIter = enemies.begin(); enemyIter != enemies.end();) {
         if (enemyIter->lifespan <= 0) {
             enemyIter = enemies.erase(enemyIter);
         } else {
-            enemyIter->update();
+            if (enemyIter->update() > 0) {
+                redFlashAlpha = 127;
+            }
+            if (enemyIter->health > 0) {
+                enemiesAlive = true;
+            }
             ++enemyIter;
         }
+    }
+    
+    for (auto itemIter = itemDrops.begin(); itemIter != itemDrops.end();) {
+        if (itemIter->lifespan <= 0) {
+            itemIter = itemDrops.erase(itemIter);
+        } else {
+            itemIter->update();
+            ++itemIter;
+        }
+    }
+    
+    textBottomMap.loadText("Health: " + intToString(player.health, 3) + "     Cash: $" + intToString(playerCash, 4) + "      Ammo: " + intToString(weaponAmmo[player.getBody() / 4].first, 2) + "/" + intToString(weaponAmmo[player.getBody() / 4].second, 3) + "    ");
+    textTopMap.loadText("Score: " + to_string(playerScore) + "        ");
+    
+    if (redFlashAlpha > 0) {
+        redFlashAlpha = max(redFlashAlpha - 10, 0);
+    }
+    if (player.health <= 0) {
+        gameOver = true;
+        textCenterMap.clearText();
+        textCenterMap.loadText("Game Over\n(press enter)");
+        return;
+    }
+    
+    if (enemiesRemaining <= 0 && !enemiesAlive) {
+        if (startOfRoundCooldown <= 0) {
+            nextRound();
+        } else {
+            --startOfRoundCooldown;
+        }
+    } else if (startOfRoundCooldown == 1) {
+        textCenterMap.clearText();
+        startOfRoundCooldown = 0;
+    } else if (startOfRoundCooldown > 0) {
+        --startOfRoundCooldown;
+    } else {
+        if (roundCooldownCounter <= 0 && enemiesRemaining > 0 && enemies.size() < ENEMY_CAP) {
+            enemies.push_back(Enemy());
+            enemies.back().bodyAnimationsPtr = &enemyAnimations;
+            enemies.back().setBody(0);
+            enemies.back().position = levelPositionsData[1][rand() % levelPositionsData[1].size()];
+            enemies.back().setSize(glm::vec2(130.0f, 130.0f));
+            enemies.back().health = 20 + static_cast<int>(2.0f * roundNumber);
+            enemies.back().targetPtr = &player;
+            enemies.back().speed = 2.5f + 0.5f * static_cast<float>(rand()) / RAND_MAX;
+            enemies.back().damage = 20 + static_cast<int>(2.0f * roundNumber);
+            --enemiesRemaining;
+            roundCooldownCounter = static_cast<int>((10.0f + 5.0f * static_cast<float>(rand()) / RAND_MAX) / (0.1f * roundNumber));
+        }
+        --roundCooldownCounter;
     }
 }
 
@@ -426,6 +621,7 @@ int main( int argc, char* argv[] ) {
     
     //auto lastTime = chrono::high_resolution_clock::now();    // I put this here with an FPS limiter below to set a frame limit but it seems like OpenGL is already using vsync! nice
     try {
+        loadResources();
         setupGame();
 
         //  This is our draw loop - all rendering is done here.  We use a loop to keep the window open

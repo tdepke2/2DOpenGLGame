@@ -3,12 +3,18 @@ name,The Desert
 size,48,48
 
 player:
+1300.0,1300.0
 end
 
-entities:
+spawners:
+1300.0,1300.0
+1300.0,1100.0
 end
 
-data:
+items:
+1150.0,1400.0
+1450.0,1400.0
+1750.0,1400.0
 end
 
 tiles:

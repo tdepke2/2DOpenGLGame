@@ -1,5 +1,5 @@
-#ifndef TEXTURE_RECT_H
-#define TEXTURE_RECT_H
+#ifndef _TEXTURE_RECT_H
+#define _TEXTURE_RECT_H
 
 #include <GLFW/glfw3.h>    // OpenGL, GLFW, and GLM libs.
 #ifdef __APPLE__
@@ -21,6 +21,7 @@ bool checkCollisionAABB(const glm::vec2& aBottomLeft, const glm::vec2& aTopRight
 class TextureRect {
     public:
     GLint texture;
+    glm::uvec4 color;
     glm::vec2 position, origin, size, texCoordBottomLeft, texCoordTopRight;
     float rotation;
     

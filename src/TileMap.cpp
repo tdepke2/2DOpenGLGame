@@ -6,6 +6,7 @@
 using namespace std;
 
 TileMap::TileMap() {
+    color = glm::uvec4(255, 255, 255, 255);
     position = glm::vec2(0.0f, 0.0f);
     _texture = 0;
     _textureSize = glm::uvec2(0, 0);
@@ -43,7 +44,7 @@ void TileMap::setTile(int data, int x, int y) {
     _texVertices[baseIndex + 3] = glm::vec2(texBottomLeftX, texTopLeftY);
 }
 
-void TileMap::loadMap(const string& filename, GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize) {
+vector<vector<glm::vec2>> TileMap::loadMap(const string& filename, GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize) {
     ifstream loadFile(filename);
     if (!loadFile.is_open()) {
         throw runtime_error("\"" + filename + "\": Unable to open level file.");
@@ -55,6 +56,7 @@ void TileMap::loadMap(const string& filename, GLint textureHandle, const glm::uv
     float levelVersion;
     string line;
     int lineNumber = 0, numEntries = 0, currentY;
+    vector<vector<glm::vec2>> positionsData(3);
     try {
         while (getline(loadFile, line)) {
             ++lineNumber;
@@ -79,25 +81,40 @@ void TileMap::loadMap(const string& filename, GLint textureHandle, const glm::uv
                 ++numEntries;
             } else if (numEntries == 4) {    // Parse data for the player.
                 if (data.size() == 1 && data[0] == "end") {
+                    if (positionsData[0].size() != 1) {
+                        throw runtime_error("Expected 1 entry.");
+                    }
                     ++numEntries;
+                } else if (data.size() == 2) {
+                    positionsData[0].push_back(glm::vec2(stof(data[0]), stof(data[1])));
                 } else {
                     throw runtime_error("Unrecognized player data.");
                 }
-            } else if (numEntries == 5 && data.size() == 1 && data[0] == "entities:") {
+            } else if (numEntries == 5 && data.size() == 1 && data[0] == "spawners:") {
                 ++numEntries;
-            } else if (numEntries == 6) {    // Parse data for all entities.
+            } else if (numEntries == 6) {    // Parse data for all spawners.
                 if (data.size() == 1 && data[0] == "end") {
+                    if (positionsData[1].size() == 0) {
+                        throw runtime_error("Expected at least 1 entry.");
+                    }
                     ++numEntries;
+                } else if (data.size() == 2) {
+                    positionsData[1].push_back(glm::vec2(stof(data[0]), stof(data[1])));
                 } else {
-                    throw runtime_error("Unrecognized entity data.");
+                    throw runtime_error("Unrecognized spawner data.");
                 }
-            } else if (numEntries == 7 && data.size() == 1 && data[0] == "data:") {
+            } else if (numEntries == 7 && data.size() == 1 && data[0] == "items:") {
                 ++numEntries;
-            } else if (numEntries == 8) {    // Parse data for all custom data.
+            } else if (numEntries == 8) {    // Parse data for all items.
                 if (data.size() == 1 && data[0] == "end") {
+                    if (positionsData[2].size() != 3) {
+                        throw runtime_error("Expected 3 entries.");
+                    }
                     ++numEntries;
+                } else if (data.size() == 2) {
+                    positionsData[2].push_back(glm::vec2(stof(data[0]), stof(data[1])));
                 } else {
-                    throw runtime_error("Unrecognized custom data.");
+                    throw runtime_error("Unrecognized item data.");
                 }
             } else if (numEntries == 9 && data.size() == 1 && data[0] == "tiles:") {
                 ++numEntries;
@@ -124,6 +141,7 @@ void TileMap::loadMap(const string& filename, GLint textureHandle, const glm::uv
         throw runtime_error("\"" + filename + "\": Missing level data, end of file reached.");
     }
     loadFile.close();
+    return positionsData;
 }
 
 void TileMap::loadFont(GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize) {
@@ -152,11 +170,7 @@ void TileMap::loadText(const string& text) {
     }
     if (fieldSize.x > _mapSize.x || fieldSize.y > _mapSize.y) {
         _reallocateMap(fieldSize);
-        for (unsigned int y = 0; y < _mapSize.y; ++y) {
-            for (unsigned int x = 0; x < _mapSize.x; ++x) {
-                setTile(0, x, y);
-            }
-        }
+        clearText();
     }
     
     unsigned int x = 0, y = _mapSize.y - 1;
@@ -173,6 +187,14 @@ void TileMap::loadText(const string& text) {
     }
 }
 
+void TileMap::clearText() {
+    for (unsigned int y = 0; y < _mapSize.y; ++y) {
+        for (unsigned int x = 0; x < _mapSize.x; ++x) {
+            setTile(0, x, y);
+        }
+    }
+}
+
 void TileMap::draw() const {
     glm::mat4 positionMtx = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0f));
     glMultMatrixf(&positionMtx[0][0]); {
@@ -180,7 +202,7 @@ void TileMap::draw() const {
         glBindTexture(GL_TEXTURE_2D, _texture);
         glEnable(GL_TEXTURE_2D);
         glBegin(GL_TRIANGLES); {
-            glColor4f(1, 1, 1, 1);
+            glColor4ub(color.r, color.g, color.b, color.a);
             int baseIndex = 0;
             for (unsigned int y = 0; y < _mapSize.y; ++y) {
                 for (unsigned int x = 0; x < _mapSize.x; ++x) {

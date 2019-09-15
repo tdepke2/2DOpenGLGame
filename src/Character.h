@@ -1,5 +1,5 @@
-#ifndef CHARCTER_H
-#define CHARCTER_H
+#ifndef _CHARCTER_H
+#define _CHARCTER_H
 
 #include <GLFW/glfw3.h>    // OpenGL, GLFW, and GLM libs.
 #ifdef __APPLE__

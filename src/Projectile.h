@@ -1,5 +1,5 @@
-#ifndef PROJECTILE_H
-#define PROJECTILE_H
+#ifndef _PROJECTILE_H
+#define _PROJECTILE_H
 
 #include "Enemy.h"
 #include "TextureRect.h"
@@ -13,7 +13,7 @@ class Projectile : public TextureRect {
     int lifespan, health, damage;
     
     Projectile();
-    void update(list<Enemy>& targets);
+    int update(list<Enemy>& targets);
 };
 
 #endif

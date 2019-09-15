@@ -1,5 +1,5 @@
-#ifndef ENEMY_H
-#define ENEMY_H
+#ifndef _ENEMY_H
+#define _ENEMY_H
 
 #include "Character.h"
 
@@ -7,14 +7,14 @@ using namespace std;
 
 class Enemy : public Character {
     public:
-    const Character* targetPtr;
+    Character* targetPtr;
     float speed;
-    int lifespan;
+    int lifespan, damage;
     
     Enemy();
     bool isTouchingCharacter(const Character* character) const;
-    void applyDamage(int damage);
-    void update();
+    int applyDamage(int damage);
+    int update();
 };
 
 #endif

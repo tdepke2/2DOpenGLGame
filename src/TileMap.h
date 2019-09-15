@@ -1,5 +1,5 @@
-#ifndef TILE_MAP_H
-#define TILE_MAP_H
+#ifndef _TILE_MAP_H
+#define _TILE_MAP_H
 
 #include <GLFW/glfw3.h>    // OpenGL, GLFW, and GLM libs.
 #ifdef __APPLE__
@@ -17,6 +17,7 @@ using namespace std;
 
 class TileMap {
     public:
+    glm::uvec4 color;
     glm::vec2 position;
     string levelName;
     
@@ -25,9 +26,10 @@ class TileMap {
     const glm::uvec2& getMapSize() const;
     int getTile(int x, int y) const;
     void setTile(int data, int x, int y);
-    void loadMap(const string& filename, GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize);
+    vector<vector<glm::vec2>> loadMap(const string& filename, GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize);
     void loadFont(GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize);
     void loadText(const string& text);
+    void clearText();
     void draw() const;
     
     private:

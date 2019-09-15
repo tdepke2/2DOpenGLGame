@@ -10,7 +10,7 @@ using namespace std;
 
 Enemy::Enemy() {
     targetPtr = nullptr;
-    lifespan = 2000;
+    lifespan = 1000;
 }
 
 bool Enemy::isTouchingCharacter(const Character* character) const {
@@ -20,15 +20,18 @@ bool Enemy::isTouchingCharacter(const Character* character) const {
     return false;
 }
 
-void Enemy::applyDamage(int damage) {
+int Enemy::applyDamage(int damage) {
     health -= damage;
     if (health <= 0) {
         setBody(2);
         rotation = 2.0f * PI * static_cast<float>(rand()) / RAND_MAX;
+        return 2;
     }
+    return 0;
 }
 
-void Enemy::update() {
+int Enemy::update() {
+    int damageDealt = 0;
     Character::update();
     if (getBody() != 2) {
         if (targetPtr != nullptr) {
@@ -38,15 +41,23 @@ void Enemy::update() {
             if (getBody() == 0) {
                 if (isTouchingCharacter(targetPtr)) {
                     setBody(1);
+                    targetPtr->health = max(targetPtr->health - damage, 0);
+                    damageDealt = damage;
                 } else {
                     position.x += speed * cos(rotation);
                     position.y += speed * sin(rotation);
                 }
-            } else if (getBodyNumber() == 0 && !isTouchingCharacter(targetPtr)) {
-                setBody(0);
+            } else if (getBodyNumber() == 0) {
+                if (isTouchingCharacter(targetPtr)) {
+                    targetPtr->health = max(targetPtr->health - damage, 0);
+                    damageDealt = damage;
+                } else {
+                    setBody(0);
+                }
             }
         }
     } else {
         --lifespan;
     }
+    return damageDealt;
 }

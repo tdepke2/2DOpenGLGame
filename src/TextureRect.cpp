@@ -6,7 +6,7 @@
 using namespace std;
 
 GLint loadTexture(const string& filename) {
-    cout << "Loading \"" << filename << "\"" << endl;
+    cout << "Loading file \"" << filename << "\"." << endl;
     glEnable(GL_TEXTURE_2D);
     GLint textureHandle = SOIL_load_OGL_texture(filename.c_str(), SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT);
     if(textureHandle == 0) {
@@ -27,6 +27,7 @@ bool checkCollisionAABB(const glm::vec2& aBottomLeft, const glm::vec2& aTopRight
 
 TextureRect::TextureRect() {
     texture = 0;
+    color = glm::uvec4(255, 255, 255, 255);
     position = glm::vec2(0.0f, 0.0f);
     origin = glm::vec2(0.0f, 0.0f);
     size = glm::vec2(0.0f, 0.0f);
@@ -35,12 +36,11 @@ TextureRect::TextureRect() {
     texCoordTopRight = glm::vec2(1.0f, 1.0f);
 }
 
-TextureRect::TextureRect(const string& filename, const glm::vec2& position, const glm::vec2& size) {
-    TextureRect(loadTexture(filename), position, size);
-}
+TextureRect::TextureRect(const string& filename, const glm::vec2& position, const glm::vec2& size) : TextureRect(loadTexture(filename), position, size) {}
 
 TextureRect::TextureRect(GLint textureHandle, const glm::vec2& position, const glm::vec2& size) {
     texture = textureHandle;
+    color = glm::uvec4(255, 255, 255, 255);
     this->position = position;
     origin = glm::vec2(0.0f, 0.0f);
     this->size = size;
@@ -63,7 +63,7 @@ void TextureRect::draw() const {
                 glBindTexture(GL_TEXTURE_2D, texture);
                 glEnable(GL_TEXTURE_2D);
                 glBegin(GL_TRIANGLES); {
-                    glColor4f(1, 1, 1, 1);
+                    glColor4ub(color.r, color.g, color.b, color.a);
                     glTexCoord2f(texCoordBottomLeft.x, texCoordBottomLeft.y); glVertex2f(0.0f, 0.0f);
                     glTexCoord2f(texCoordTopRight.x, texCoordBottomLeft.y); glVertex2f(size.x, 0.0f);
                     glTexCoord2f(texCoordBottomLeft.x, texCoordTopRight.y); glVertex2f(0.0f, size.y);
