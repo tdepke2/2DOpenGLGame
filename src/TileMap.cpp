@@ -51,7 +51,6 @@ void TileMap::loadMap(const string& filename, GLint textureHandle, const glm::uv
     _texture = textureHandle;
     _textureSize = textureSize;
     _tileSize = tileSize;
-    _deleteMap();
     
     float levelVersion;
     string line;
@@ -73,21 +72,7 @@ void TileMap::loadMap(const string& filename, GLint textureHandle, const glm::uv
                 levelName = data[1];
                 ++numEntries;
             } else if (numEntries == 2 && data.size() == 3 && data[0] == "size") {    // Allocate size of the level.
-                _mapSize = glm::uvec2(stoul(data[1]), stoul(data[2]));
-                _mapData = new int*[_mapSize.y];
-                for (unsigned int y = 0; y < _mapSize.y; ++y) {
-                    _mapData[y] = new int[_mapSize.x];
-                    for (unsigned int x = 0; x < _mapSize.x; ++x) {
-                        float windowX = static_cast<float>(x * _tileSize.x);
-                        float windowY = static_cast<float>(y * _tileSize.y);
-                        _posVertices.push_back(glm::vec2(windowX, windowY));
-                        _posVertices.push_back(glm::vec2(windowX + _tileSize.x, windowY));
-                        _posVertices.push_back(glm::vec2(windowX + _tileSize.x, windowY + _tileSize.y));
-                        _posVertices.push_back(glm::vec2(windowX, windowY + _tileSize.y));
-                    }
-                }
-                _posVertices.reserve(_mapSize.x * _mapSize.y * 4);
-                _texVertices.resize(_mapSize.x * _mapSize.y * 4);
+                _reallocateMap(glm::uvec2(stoul(data[1]), stoul(data[2])));
                 currentY = _mapSize.y - 1;
                 ++numEntries;
             } else if (numEntries == 3 && data.size() == 1 && data[0] == "player:") {
@@ -139,6 +124,53 @@ void TileMap::loadMap(const string& filename, GLint textureHandle, const glm::uv
         throw runtime_error("\"" + filename + "\": Missing level data, end of file reached.");
     }
     loadFile.close();
+}
+
+void TileMap::loadFont(GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize) {
+    _texture = textureHandle;
+    _textureSize = textureSize;
+    _tileSize = tileSize;
+    _deleteMap();
+}
+
+void TileMap::loadText(const string& text) {
+    glm::uvec2 fieldSize(0, 1);
+    unsigned int lineLength = 0;
+    for (unsigned int i = 0; i < text.length(); ++i) {
+        if (text[i] == '\n') {
+            ++fieldSize.y;
+            if (lineLength > fieldSize.x) {
+                fieldSize.x = lineLength;
+            }
+            lineLength = 0;
+        } else {
+            ++lineLength;
+        }
+    }
+    if (lineLength > fieldSize.x) {
+        fieldSize.x = lineLength;
+    }
+    if (fieldSize.x > _mapSize.x || fieldSize.y > _mapSize.y) {
+        _reallocateMap(fieldSize);
+        for (unsigned int y = 0; y < _mapSize.y; ++y) {
+            for (unsigned int x = 0; x < _mapSize.x; ++x) {
+                setTile(0, x, y);
+            }
+        }
+    }
+    
+    unsigned int x = 0, y = _mapSize.y - 1;
+    for (unsigned int i = 0; i < text.length(); ++i) {
+        if (text[i] == '\n') {
+            x = 0;
+            --y;
+        } else {
+            if (_mapData[y][x] != text[i] - ' ') {
+                setTile(text[i] - ' ', x, y);
+            }
+            ++x;
+        }
+    }
 }
 
 void TileMap::draw() const {
@@ -207,6 +239,25 @@ void TileMap::_deleteMap() {
     _texVertices.clear();
     _mapSize = glm::uvec2(0, 0);
     _mapData = nullptr;
+}
+
+void TileMap::_reallocateMap(const glm::uvec2& newSize) {
+    _deleteMap();
+    _posVertices.reserve(newSize.x * newSize.y * 4);
+    _texVertices.resize(newSize.x * newSize.y * 4);
+    _mapSize = newSize;
+    _mapData = new int*[_mapSize.y];
+    for (unsigned int y = 0; y < _mapSize.y; ++y) {
+        _mapData[y] = new int[_mapSize.x];
+        for (unsigned int x = 0; x < _mapSize.x; ++x) {
+            float windowX = static_cast<float>(x * _tileSize.x);
+            float windowY = static_cast<float>(y * _tileSize.y);
+            _posVertices.push_back(glm::vec2(windowX, windowY));
+            _posVertices.push_back(glm::vec2(windowX + _tileSize.x, windowY));
+            _posVertices.push_back(glm::vec2(windowX + _tileSize.x, windowY + _tileSize.y));
+            _posVertices.push_back(glm::vec2(windowX, windowY + _tileSize.y));
+        }
+    }
 }
 
 void TileMap::_makeGLCoord(int vertexIndex) const {

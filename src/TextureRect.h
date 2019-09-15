@@ -10,17 +10,18 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <random>
 #include <string>
 
 using namespace std;
 
 GLint loadTexture(const string& filename);
-bool checkCollisionAABB(glm::vec2 aBottomLeft, glm::vec2 aTopRight, glm::vec2 bBottomLeft, glm::vec2 bTopRight);
+bool checkCollisionAABB(const glm::vec2& aBottomLeft, const glm::vec2& aTopRight, const glm::vec2& bBottomLeft, const glm::vec2& bTopRight);
 
 class TextureRect {
     public:
     GLint texture;
-    glm::vec2 position, origin, size;
+    glm::vec2 position, origin, size, texCoordBottomLeft, texCoordTopRight;
     float rotation;
     
     TextureRect();

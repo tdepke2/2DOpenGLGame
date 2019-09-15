@@ -21,7 +21,7 @@ GLint loadTexture(const string& filename) {
     return textureHandle;
 }
 
-bool checkCollisionAABB(glm::vec2 aBottomLeft, glm::vec2 aTopRight, glm::vec2 bBottomLeft, glm::vec2 bTopRight) {
+bool checkCollisionAABB(const glm::vec2& aBottomLeft, const glm::vec2& aTopRight, const glm::vec2& bBottomLeft, const glm::vec2& bTopRight) {
     return (aBottomLeft.x < bTopRight.x && aTopRight.x > bBottomLeft.x && aBottomLeft.y < bTopRight.y && aTopRight.y > bBottomLeft.y);
 }
 
@@ -31,6 +31,8 @@ TextureRect::TextureRect() {
     origin = glm::vec2(0.0f, 0.0f);
     size = glm::vec2(0.0f, 0.0f);
     rotation = 0.0f;
+    texCoordBottomLeft = glm::vec2(0.0f, 0.0f);
+    texCoordTopRight = glm::vec2(1.0f, 1.0f);
 }
 
 TextureRect::TextureRect(const string& filename, const glm::vec2& position, const glm::vec2& size) {
@@ -62,13 +64,13 @@ void TextureRect::draw() const {
                 glEnable(GL_TEXTURE_2D);
                 glBegin(GL_TRIANGLES); {
                     glColor4f(1, 1, 1, 1);
-                    glTexCoord2f(0, 0); glVertex2f(0.0f, 0.0f);
-                    glTexCoord2f(1, 0); glVertex2f(size.x, 0.0f);
-                    glTexCoord2f(0, 1); glVertex2f(0.0f, size.y);
+                    glTexCoord2f(texCoordBottomLeft.x, texCoordBottomLeft.y); glVertex2f(0.0f, 0.0f);
+                    glTexCoord2f(texCoordTopRight.x, texCoordBottomLeft.y); glVertex2f(size.x, 0.0f);
+                    glTexCoord2f(texCoordBottomLeft.x, texCoordTopRight.y); glVertex2f(0.0f, size.y);
                     
-                    glTexCoord2f(1, 0); glVertex2f(size.x, 0.0f);
-                    glTexCoord2f(1, 1); glVertex2f(size.x, size.y);
-                    glTexCoord2f(0, 1); glVertex2f(0.0f, size.y);
+                    glTexCoord2f(texCoordTopRight.x, texCoordBottomLeft.y); glVertex2f(size.x, 0.0f);
+                    glTexCoord2f(texCoordTopRight.x, texCoordTopRight.y); glVertex2f(size.x, size.y);
+                    glTexCoord2f(texCoordBottomLeft.x, texCoordTopRight.y); glVertex2f(0.0f, size.y);
                 }; glEnd();
                 glDisable(GL_TEXTURE_2D);
                 

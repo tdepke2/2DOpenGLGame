@@ -24,6 +24,7 @@ class Character {
     const vector<vector<GLint>>* feetAnimationsPtr;
     glm::vec2 position, velocity;
     float rotation;
+    int health;
     
     Character();
     const glm::vec2& getSize() const;
