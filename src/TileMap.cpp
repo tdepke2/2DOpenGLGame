@@ -8,8 +8,8 @@ using namespace std;
 TileMap::TileMap() {
     color = glm::uvec4(255, 255, 255, 255);
     position = glm::vec2(0.0f, 0.0f);
-    _texture = 0;
-    _textureSize = glm::uvec2(0, 0);
+    _texture.first = 0;
+    _texture.second = glm::uvec2(0, 0);
     _tileSize = glm::uvec2(0, 0);
     _mapSize = glm::uvec2(0, 0);
     _mapData = nullptr;
@@ -30,8 +30,8 @@ int TileMap::getTile(int x, int y) const {
 void TileMap::setTile(int data, int x, int y) {
     _mapData[y][x] = data;
     unsigned int baseIndex = (y * _mapSize.x + x) * 4;
-    glm::ivec2 tileMapSize(_textureSize.x / _tileSize.x, _textureSize.y / _tileSize.y);
-    glm::vec2 extraTileOverlap(0.5f / _textureSize.x, 0.5f / _textureSize.y);    // Half pixel of extra overlap to fix lines in map.
+    glm::ivec2 tileMapSize(_texture.second.x / _tileSize.x, _texture.second.y / _tileSize.y);
+    glm::vec2 extraTileOverlap(0.5f / _texture.second.x, 0.5f / _texture.second.y);    // Half pixel of extra overlap to fix lines in map.
     
     float texBottomLeftX = static_cast<float>(data % tileMapSize.x) / tileMapSize.x + extraTileOverlap.x;
     float texBottomLeftY = static_cast<float>(data / tileMapSize.x) / tileMapSize.y + extraTileOverlap.y;
@@ -44,13 +44,12 @@ void TileMap::setTile(int data, int x, int y) {
     _texVertices[baseIndex + 3] = glm::vec2(texBottomLeftX, texTopLeftY);
 }
 
-vector<vector<glm::vec2>> TileMap::loadMap(const string& filename, GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize) {
+vector<vector<glm::vec2>> TileMap::loadMap(const string& filename, const pair<GLint, glm::uvec2>& texture, const glm::uvec2& tileSize) {
     ifstream loadFile(filename);
     if (!loadFile.is_open()) {
         throw runtime_error("\"" + filename + "\": Unable to open level file.");
     }
-    _texture = textureHandle;
-    _textureSize = textureSize;
+    _texture = texture;
     _tileSize = tileSize;
     
     float levelVersion;
@@ -144,9 +143,8 @@ vector<vector<glm::vec2>> TileMap::loadMap(const string& filename, GLint texture
     return positionsData;
 }
 
-void TileMap::loadFont(GLint textureHandle, const glm::uvec2& textureSize, const glm::uvec2& tileSize) {
-    _texture = textureHandle;
-    _textureSize = textureSize;
+void TileMap::loadFont(const pair<GLint, glm::uvec2>& texture, const glm::uvec2& tileSize) {
+    _texture = texture;
     _tileSize = tileSize;
     _deleteMap();
 }
@@ -199,7 +197,7 @@ void TileMap::draw() const {
     glm::mat4 positionMtx = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0f));
     glMultMatrixf(&positionMtx[0][0]); {
         
-        glBindTexture(GL_TEXTURE_2D, _texture);
+        glBindTexture(GL_TEXTURE_2D, _texture.first);
         glEnable(GL_TEXTURE_2D);
         glBegin(GL_TRIANGLES); {
             glColor4ub(color.r, color.g, color.b, color.a);

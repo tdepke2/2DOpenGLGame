@@ -7,7 +7,7 @@ Item::Item() {
     lifespan = 0;
 }
 
-Item::Item(GLint textureHandle, const glm::vec2& position, const glm::vec2& size, Type type) : TextureRect(textureHandle, position, size) {
+Item::Item(const pair<GLint, glm::uvec2>& texture, const glm::vec2& position, const glm::vec2& size, Type type) : TextureRect(texture, position, size) {
     centerOrigin();
     this->type = type;
     drawLabel = false;
@@ -41,7 +41,7 @@ void Item::update() {
 void Item::draw() const {
     TextureRect::draw();
     if (drawLabel) {
-        glm::mat4 transMtx = glm::translate(glm::mat4(1.0f), glm::vec3(position.x - origin.x - 30.0f, position.y - origin.y - 20.0f, 0.0f));
+        glm::mat4 transMtx = glm::translate(glm::mat4(1.0f), glm::vec3(position.x - origin.x - 40.0f, position.y - origin.y - 20.0f, 0.0f));
         glMultMatrixf(&transMtx[0][0]); {
             glm::mat4 scaleMtx = glm::scale(glm::mat4(1.0f), glm::vec3(0.7f, 0.7f, 1.0f));
             glMultMatrixf(&scaleMtx[0][0]); {

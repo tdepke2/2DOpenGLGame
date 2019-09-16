@@ -12,7 +12,7 @@ int Projectile::update(list<Enemy>& targets) {
     glm::vec2 bottomLeft(position.x - size.x * 0.5f, position.y - size.x * 0.5f);
     glm::vec2 topRight(position.x + size.x * 0.5f, position.y + size.x * 0.5f);
     for (Enemy& enemy : targets) {
-        if (enemy.health > 0 && checkCollisionAABB(bottomLeft, topRight, enemy.position - enemy.getSize() * 0.5f, enemy.position + enemy.getSize() * 0.5f)) {
+        if (enemy.health > 0 && enemy.iFrames <= 0 && checkCollisionAABB(bottomLeft, topRight, enemy.position - enemy.getHitbox() * 0.5f, enemy.position + enemy.getHitbox() * 0.5f)) {
             if (sqrt(pow(position.x - enemy.position.x, 2.0f) + pow(position.y - enemy.position.y, 2.0f)) < 50.0f) {
                 numPoints += enemy.applyDamage(damage);
                 health -= damage;

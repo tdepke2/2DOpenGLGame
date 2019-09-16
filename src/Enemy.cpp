@@ -14,14 +14,14 @@ Enemy::Enemy() {
 }
 
 bool Enemy::isTouchingCharacter(const Character* character) const {
-    if (checkCollisionAABB(position - getSize() * 0.5f, position + getSize() * 0.5f, character->position - character->getSize() * 0.5f, character->position + character->getSize() * 0.5f)) {
+    if (checkCollisionAABB(position - getHitbox() * 0.5f, position + getHitbox() * 0.5f, character->position - character->getHitbox() * 0.5f, character->position + character->getHitbox() * 0.5f)) {
         return (sqrt(pow(position.x - character->position.x, 2.0f) + pow(position.y - character->position.y, 2.0f)) < 50.0f);
     }
     return false;
 }
 
 int Enemy::applyDamage(int damage) {
-    health -= damage;
+    Character::applyDamage(damage);
     if (health <= 0) {
         setBody(2);
         rotation = 2.0f * PI * static_cast<float>(rand()) / RAND_MAX;
@@ -41,16 +41,20 @@ int Enemy::update() {
             if (getBody() == 0) {
                 if (isTouchingCharacter(targetPtr)) {
                     setBody(1);
-                    targetPtr->health = max(targetPtr->health - damage, 0);
-                    damageDealt = damage;
+                    if (targetPtr->iFrames <= 0) {
+                        targetPtr->applyDamage(damage);
+                        damageDealt = damage;
+                    }
                 } else {
                     position.x += speed * cos(rotation);
                     position.y += speed * sin(rotation);
                 }
-            } else if (getBodyNumber() == 0) {
+            } else if (getBodyFrameNumber() == 0) {
                 if (isTouchingCharacter(targetPtr)) {
-                    targetPtr->health = max(targetPtr->health - damage, 0);
-                    damageDealt = damage;
+                    if (targetPtr->iFrames <= 0) {
+                        targetPtr->applyDamage(damage);
+                        damageDealt = damage;
+                    }
                 } else {
                     setBody(0);
                 }
