@@ -4,20 +4,23 @@ size,48,48
 
 # Player starting position.
 player:
-1300.0,1300.0
+2000.0,1400.0
 end
 
 # Positions of each zombie spawner on the map.
 spawners:
-1300.0,1300.0
-1300.0,1100.0
+910.0,910.0
+3700.0,910.0
+910.0,3700.0
+3700.0,3700.0
+2305.0,2305.0
 end
 
 # Positions for pistol, rifle, and shotgun items.
 items:
-1150.0,1400.0
-1450.0,1400.0
-1750.0,1400.0
+1750.0,1300.0
+3500.0,3450.0
+1000.0,2750.0
 end
 
 # Yikes, I need to include a level editor in the game next time I do something like this. Typing in the numbers manually is way too error prone and time consuming.

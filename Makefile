@@ -22,7 +22,7 @@
 ########################################
 
 TARGET = sq1
-OBJECTS = src/main.o src/Character.o src/TextureRect.o src/TileMap.o
+OBJECTS = src/main.o src/Animation.o src/Character.o src/Enemy.o src/Item.o src/Projectile.o src/TextureRect.o src/TileMap.o
 
 LOCAL_INC_PATH = /Users/jpaone/Desktop/include
 LOCAL_LIB_PATH = /Users/jpaone/Desktop/lib

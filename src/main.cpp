@@ -62,6 +62,9 @@ using namespace std;
 // for later on in case the window gets resized.
 int WINDOW_WIDTH = 768, WINDOW_HEIGHT = 768;
 const int ENEMY_CAP = 500;    // Max number of enemies on screen at a time.
+const int PISTOL_PRICE = 20;
+const int RIFLE_PRICE = 130;
+const int SHOTGUN_PRICE = 100;
 
 Character player;    // Ok ok so this is way too many globals, next time I will use a Game class to manage this.
 list<Enemy> enemies;
@@ -96,22 +99,22 @@ void keyboard_callback( GLFWwindow *win, int key, int scancode, int action, int 
         }
     } else if (key == GLFW_KEY_E && action == GLFW_PRESS) {
         if (sqrt(pow(player.position.x - pistolItem.position.x, 2.0f) + pow(player.position.y - pistolItem.position.y, 2.0f)) < 100.0f) {
-            if (playerCash >= 10 && weaponAmmo[1].first < maximumAmmo[1].first || weaponAmmo[1].second < maximumAmmo[1].second) {
-                playerCash -= 10;
+            if (playerCash >= PISTOL_PRICE && (weaponAmmo[1].first < maximumAmmo[1].first || weaponAmmo[1].second < maximumAmmo[1].second)) {
+                playerCash -= PISTOL_PRICE;
                 weaponAmmo[1].first = maximumAmmo[1].first;
                 weaponAmmo[1].second = maximumAmmo[1].second;
                 player.setBody(4);
             }
         } else if (sqrt(pow(player.position.x - rifleItem.position.x, 2.0f) + pow(player.position.y - rifleItem.position.y, 2.0f)) < 100.0f) {
-            if (playerCash >= 90 && weaponAmmo[2].first < maximumAmmo[2].first || weaponAmmo[2].second < maximumAmmo[2].second) {
-                playerCash -= 90;
+            if (playerCash >= RIFLE_PRICE && (weaponAmmo[2].first < maximumAmmo[2].first || weaponAmmo[2].second < maximumAmmo[2].second)) {
+                playerCash -= RIFLE_PRICE;
                 weaponAmmo[2].first = maximumAmmo[2].first;
                 weaponAmmo[2].second = maximumAmmo[2].second;
                 player.setBody(8);
             }
         } else if (sqrt(pow(player.position.x - shotgunItem.position.x, 2.0f) + pow(player.position.y - shotgunItem.position.y, 2.0f)) < 100.0f) {
-            if (playerCash >= 80 && weaponAmmo[3].first < maximumAmmo[3].first || weaponAmmo[3].second < maximumAmmo[3].second) {
-                playerCash -= 80;
+            if (playerCash >= SHOTGUN_PRICE && (weaponAmmo[3].first < maximumAmmo[3].first || weaponAmmo[3].second < maximumAmmo[3].second)) {
+                playerCash -= SHOTGUN_PRICE;
                 weaponAmmo[3].first = maximumAmmo[3].first;
                 weaponAmmo[3].second = maximumAmmo[3].second;
                 player.setBody(12);
@@ -207,15 +210,16 @@ void setupOpenGL() {
 }
 
 void loadResources() {    // Load file resources for textures/fonts/etc.
-    cout << "Controls: Use WASD to move, mouse to aim, left click to attack, R to reload, and E to interact/purchase item." << endl << endl;
+    cout << "Controls: Use WASD to move, mouse to aim, left click to attack, R to reload, and E to interact/purchase item." << endl;
+    cout << "The rounds are endless and you must survive as long as you can. Explore the map to find more weapons you can buy." << endl << endl;
     cout << "Please wait, loading resources.";
     srand(static_cast<unsigned int>(time(NULL)));    // Still using rand() in 2019? Thats a big no no, oh well.
     spriteTextures = loadTexture("spritesheet.png");
     fontTexture = loadTexture("oldschool_font.png");
     
     cout << "\n    Player animations...";
-    playerBodyAnimations.emplace_back("survivor/knife/idle/survivor-idle_knife_0.png", 0, 0, 1);//19));
-    playerBodyAnimations.emplace_back("survivor/knife/move/survivor-move_knife_0.png", 0, 0, 1);//19));
+    playerBodyAnimations.emplace_back("survivor/knife/idle/survivor-idle_knife_0.png", 0, 19, 1);
+    playerBodyAnimations.emplace_back("survivor/knife/move/survivor-move_knife_0.png", 0, 19, 1);
     playerBodyAnimations.emplace_back(vector<GLint>(0), glm::vec2(0.0f, 0.0f), 1);    // You can't reload your knife! (but it would be cool)
     playerBodyAnimations.emplace_back("survivor/knife/meleeattack/survivor-meleeattack_knife_0.png", 0, 14, 1);
     
@@ -226,20 +230,20 @@ void loadResources() {    // Load file resources for textures/fonts/etc.
     playerBodyAnimations.emplace_back("survivor/handgun/shoot/survivor-shoot_handgun_0.png", 0, 2, 1);
     
     cout << ".";
-    playerBodyAnimations.emplace_back("survivor/rifle/idle/survivor-idle_rifle_0.png", 0, 0, 1);//19));
-    playerBodyAnimations.emplace_back("survivor/rifle/move/survivor-move_rifle_0.png", 0, 0, 1);//19));
+    playerBodyAnimations.emplace_back("survivor/rifle/idle/survivor-idle_rifle_0.png", 0, 19, 1);
+    playerBodyAnimations.emplace_back("survivor/rifle/move/survivor-move_rifle_0.png", 0, 19, 1);
     playerBodyAnimations.emplace_back("survivor/rifle/reload/survivor-reload_rifle_0.png", 0, 19, 4);
     playerBodyAnimations.emplace_back("survivor/rifle/shoot/survivor-shoot_rifle_0.png", 0, 2, 1);
     
     cout << ".";
-    playerBodyAnimations.emplace_back("survivor/shotgun/idle/survivor-idle_shotgun_0.png", 0, 0, 1);//19));
-    playerBodyAnimations.emplace_back("survivor/shotgun/move/survivor-move_shotgun_0.png", 0, 0, 1);//19));
+    playerBodyAnimations.emplace_back("survivor/shotgun/idle/survivor-idle_shotgun_0.png", 0, 19, 1);
+    playerBodyAnimations.emplace_back("survivor/shotgun/move/survivor-move_shotgun_0.png", 0, 19, 1);
     playerBodyAnimations.emplace_back("survivor/shotgun/reload/survivor-reload_shotgun_0.png", 0, 19, 5);
     playerBodyAnimations.emplace_back("survivor/shotgun/shoot/survivor-shoot_shotgun_0.png", 0, 2, 1);
     
     cout << ".";
     playerFeetAnimations.emplace_back("survivor/feet/idle/survivor-idle_0.png", 0, 0, 0);
-    playerFeetAnimations.emplace_back("survivor/feet/run/survivor-run_0.png", 0, 19, 0);
+    playerFeetAnimations.emplace_back("survivor/feet/run/survivor-run_0.png", 0, 19, 1);
     playerFeetAnimations.emplace_back("survivor/feet/strafe_left/survivor-strafe_left_0.png", 0, 19, 0);
     playerFeetAnimations.emplace_back("survivor/feet/strafe_right/survivor-strafe_right_0.png", 0, 19, 0);
     
@@ -257,19 +261,19 @@ void loadResources() {    // Load file resources for textures/fonts/etc.
     
     pistolItem = Item(spriteTextures, levelPositionsData[2][0], glm::vec2(160.0f, 80.0f), Item::PISTOL, 0);
     pistolItem.labelTextMap.loadFont(fontTexture, glm::uvec2(28, 36));
-    pistolItem.labelTextMap.loadText("Pistol: $10");
+    pistolItem.labelTextMap.loadText("Pistol: $" + to_string(PISTOL_PRICE));
     pistolItem.labelTextMap.color = glm::uvec4(127, 127, 127, 255);
     pistolItem.drawLabel = true;
     
     rifleItem = Item(spriteTextures, levelPositionsData[2][1], glm::vec2(160.0f, 80.0f), Item::RIFLE, 0);
     rifleItem.labelTextMap.loadFont(fontTexture, glm::uvec2(28, 36));
-    rifleItem.labelTextMap.loadText("Rifle: $90");
+    rifleItem.labelTextMap.loadText("Rifle: $" + to_string(RIFLE_PRICE));
     rifleItem.labelTextMap.color = glm::uvec4(127, 127, 127, 255);
     rifleItem.drawLabel = true;
     
     shotgunItem = Item(spriteTextures, levelPositionsData[2][2], glm::vec2(160.0f, 80.0f), Item::SHOTGUN, 0);
     shotgunItem.labelTextMap.loadFont(fontTexture, glm::uvec2(28, 36));
-    shotgunItem.labelTextMap.loadText("Shotgun: $80");
+    shotgunItem.labelTextMap.loadText("Shotgun: $" + to_string(SHOTGUN_PRICE));
     shotgunItem.labelTextMap.color = glm::uvec4(127, 127, 127, 255);
     shotgunItem.drawLabel = true;
     
@@ -298,8 +302,8 @@ void setupGame() {
     
     maximumAmmo.clear();
     maximumAmmo.push_back(pair<int, int>(0, 0));
-    maximumAmmo.push_back(pair<int, int>(10, 30));
-    maximumAmmo.push_back(pair<int, int>(20, 100));
+    maximumAmmo.push_back(pair<int, int>(10, 50));
+    maximumAmmo.push_back(pair<int, int>(25, 100));
     maximumAmmo.push_back(pair<int, int>(5, 60));
     weaponAmmo.clear();
     weaponAmmo.push_back(pair<int, int>(0, 0));
@@ -318,7 +322,7 @@ void setupGame() {
     textTopMap.clearText();
     textTopMap.color = glm::uvec4(0, 0, 255, 255);
     
-    playerCash = 9999;
+    playerCash = 0;
     playerScore = 0;
     redFlashAlpha = 0;
     roundNumber = 0;
@@ -417,7 +421,7 @@ void nextRound() {
     startOfRoundCooldown = 200;
     textCenterMap.loadText("Round " + to_string(roundNumber) + "      ");
     if (roundNumber != 1) {
-        playerScore += roundNumber * 10;
+        playerScore += roundNumber * 20;
     }
 }
 
@@ -528,15 +532,15 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
             bullet.lifespan = 40;
             if (player.getBody() / 4 == 1) {    // Pistol.
                 bullet.health = 5;
-                bullet.damage = 20;
+                bullet.damage = 23;
                 projectiles.push_back(bullet);
             } else if (player.getBody() / 4 == 2) {    // Rifle.
-                bullet.health = 30;
-                bullet.damage = 25;
+                bullet.health = 50;
+                bullet.damage = 35;
                 projectiles.push_back(bullet);
             } else {    // Shotgun.
                 bullet.health = 10;
-                bullet.damage = 40;
+                bullet.damage = 60;
                 projectiles.push_back(bullet);
                 bullet.rotation += 0.2f;
                 projectiles.push_back(bullet);
@@ -599,11 +603,13 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
         } else if (checkCollisionAABBDistance((*itemPtrIter)->position, (*itemPtrIter)->size, player.position, player.getHitbox()) < 50.0f) {
             if ((*itemPtrIter)->type == Item::HEALTH && player.health < 100) {
                 player.health = min(player.health + 50, 100);
+                playerScore += 10;
                 delete (*itemPtrIter);
                 itemPtrIter = itemDrops.erase(itemPtrIter);
             } else if ((*itemPtrIter)->type == Item::AMMO && (weaponAmmo[player.getBody() / 4].first < maximumAmmo[player.getBody() / 4].first || weaponAmmo[player.getBody() / 4].second < maximumAmmo[player.getBody() / 4].second)) {
                 weaponAmmo[player.getBody() / 4].first = maximumAmmo[player.getBody() / 4].first;
                 weaponAmmo[player.getBody() / 4].second = maximumAmmo[player.getBody() / 4].second;
+                playerScore += 20;
                 delete (*itemPtrIter);
                 itemPtrIter = itemDrops.erase(itemPtrIter);
             } else {
@@ -652,20 +658,20 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
             
             enemies.back().health = 20 + static_cast<int>(2.0f * roundNumber);
             enemies.back().speed = 2.0f + 2.0f * static_cast<float>(rand()) / RAND_MAX + 0.2f * sqrt(static_cast<float>(roundNumber));
-            enemies.back().damage = 20 + static_cast<int>(2.0f * roundNumber);
+            enemies.back().damage = 15 + static_cast<int>(2.0f * roundNumber);
             if (static_cast<float>(rand()) / RAND_MAX < (roundNumber % 10 == 0 ? 0.5f : 0.02f)) {    // Rare zombie varient.
                 enemies.back().color = glm::uvec4(98, 142, 209, 255);
                 enemies.back().setScale(0.7f);
                 enemies.back().health *= 4;
                 enemies.back().speed += 1.0f;
             }
-            if (static_cast<float>(rand()) / RAND_MAX < 0.2f / sqrt(static_cast<float>(roundNumber))) {    // Item drops.
+            if (static_cast<float>(rand()) / RAND_MAX < 0.1f / sqrt(static_cast<float>(roundNumber))) {    // Item drops.
                 enemies.back().itemDropPtr = new Item(spriteTextures, glm::vec2(0.0f, 0.0f), glm::vec2(50.0f, 50.0f), Item::HEALTH, 600);
-            } else if (static_cast<float>(rand()) / RAND_MAX < 0.05f / sqrt(static_cast<float>(roundNumber))) {
+            } else if (static_cast<float>(rand()) / RAND_MAX < 0.01f / sqrt(static_cast<float>(roundNumber))) {
                 enemies.back().itemDropPtr = new Item(spriteTextures, glm::vec2(0.0f, 0.0f), glm::vec2(50.0f, 50.0f), Item::AMMO, 600);
             }
             --enemiesRemaining;
-            roundCooldownCounter = static_cast<int>((10.0f + 5.0f * static_cast<float>(rand()) / RAND_MAX) / (0.1f * roundNumber));
+            roundCooldownCounter = static_cast<int>((100.0f + 50.0f * static_cast<float>(rand()) / RAND_MAX) / sqrt(static_cast<float>((roundNumber + 1) / 2)));
         }
         --roundCooldownCounter;
     }
