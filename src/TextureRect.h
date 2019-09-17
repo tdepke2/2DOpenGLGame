@@ -17,6 +17,7 @@ using namespace std;
 
 pair<GLint, glm::uvec2> loadTexture(const string& filename);
 bool checkCollisionAABB(const glm::vec2& aBottomLeft, const glm::vec2& aTopRight, const glm::vec2& bBottomLeft, const glm::vec2& bTopRight);
+float checkCollisionAABBDistance(const glm::vec2& aBottomLeft, const glm::vec2& aTopRight, const glm::vec2& bBottomLeft, const glm::vec2& bTopRight);
 
 class TextureRect {
     public:

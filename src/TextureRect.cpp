@@ -2,6 +2,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <iostream>
+#include <limits>
 #include <SOIL/SOIL.h>
 #include <stdexcept>
 
@@ -42,6 +43,14 @@ pair<GLint, glm::uvec2> loadTexture(const string& filename) {
 
 bool checkCollisionAABB(const glm::vec2& aBottomLeft, const glm::vec2& aTopRight, const glm::vec2& bBottomLeft, const glm::vec2& bTopRight) {
     return (aBottomLeft.x < bTopRight.x && aTopRight.x > bBottomLeft.x && aBottomLeft.y < bTopRight.y && aTopRight.y > bBottomLeft.y);
+}
+
+float checkCollisionAABBDistance(const glm::vec2& aPosition, const glm::vec2& aSize, const glm::vec2& bPosition, const glm::vec2& bSize) {
+    if (checkCollisionAABB(aPosition - aSize * 0.5f, aPosition + aSize * 0.5f, bPosition - bSize * 0.5f, bPosition + bSize * 0.5f)) {
+        return sqrt(pow(aPosition.x - bPosition.x, 2.0f) + pow(aPosition.y - bPosition.y, 2.0f));
+    } else {
+        return numeric_limits<float>::max();
+    }
 }
 
 TextureRect::TextureRect() {

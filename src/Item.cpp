@@ -7,11 +7,11 @@ Item::Item() {
     lifespan = 0;
 }
 
-Item::Item(const pair<GLint, glm::uvec2>& texture, const glm::vec2& position, const glm::vec2& size, Type type) : TextureRect(texture, position, size) {
+Item::Item(const pair<GLint, glm::uvec2>& texture, const glm::vec2& position, const glm::vec2& size, Type type, int lifespan) : TextureRect(texture, position, size) {
     centerOrigin();
     this->type = type;
     drawLabel = false;
-    lifespan = 0;
+    this->lifespan = lifespan;
     
     if (type == PISTOL) {
         texCoordBottomLeft = glm::vec2(0.0f, 2.0f / 3.0f);
@@ -35,11 +35,12 @@ void Item::update() {
     if (lifespan > 0) {
         --lifespan;
     }
-    rotation += 0.1f;
 }
 
 void Item::draw() const {
-    TextureRect::draw();
+    if (lifespan > 250 || (lifespan / 20) % 2 == 0) {
+        TextureRect::draw();
+    }
     if (drawLabel) {
         glm::mat4 transMtx = glm::translate(glm::mat4(1.0f), glm::vec3(position.x - origin.x - 40.0f, position.y - origin.y - 20.0f, 0.0f));
         glMultMatrixf(&transMtx[0][0]); {

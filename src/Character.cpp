@@ -8,6 +8,7 @@ using namespace std;
 Character::Character() {
     bodyAnimationsPtr = nullptr;
     feetAnimationsPtr = nullptr;
+    color = glm::uvec4(255, 255, 255, 255);
     health = 0;
     iFrames = 0;
     iFramesMax = 0;
@@ -111,13 +112,13 @@ void Character::draw() const {
         glm::mat4 rotateMtx = glm::rotate(glm::mat4(1.0f), rotation, glm::vec3(0.0f, 0.0f, 1.0f));
         glMultMatrixf(&rotateMtx[0][0]); {
             
+            glColor4ub(color.r, color.g, color.b, color.a);
             if (feetAnimationsPtr != nullptr) {
                 glm::mat4 originMtx = glm::translate(glm::mat4(1.0f), glm::vec3(-_feetOrigin.x - 10.0f, -_feetOrigin.y, 0.0f));
                 glMultMatrixf(&originMtx[0][0]); {
                     glBindTexture(GL_TEXTURE_2D, (*feetAnimationsPtr)[_currentFeet].frames[_currentFeetNumber]);
                     glEnable(GL_TEXTURE_2D);
                     glBegin(GL_TRIANGLES); {
-                        glColor4f(1, 1, 1, 1);
                         glTexCoord2f(0, 0); glVertex2f(0.0f, 0.0f);
                         glTexCoord2f(1, 0); glVertex2f(_feetSize.x, 0.0f);
                         glTexCoord2f(0, 1); glVertex2f(0.0f, _feetSize.y);
@@ -135,7 +136,6 @@ void Character::draw() const {
                 glBindTexture(GL_TEXTURE_2D, (*bodyAnimationsPtr)[_currentBody].frames[_currentBodyNumber]);
                 glEnable(GL_TEXTURE_2D);
                 glBegin(GL_TRIANGLES); {
-                    glColor4f(1, 1, 1, 1);
                     glTexCoord2f(0, 0); glVertex2f(0.0f, 0.0f);
                     glTexCoord2f(1, 0); glVertex2f(_bodySize.x, 0.0f);
                     glTexCoord2f(0, 1); glVertex2f(0.0f, _bodySize.y);

@@ -21,6 +21,7 @@ class Character {
     public:
     const vector<Animation>* bodyAnimationsPtr;
     const vector<Animation>* feetAnimationsPtr;
+    glm::uvec4 color;
     glm::vec2 position, velocity;
     float rotation;
     int health, iFrames, iFramesMax, bodyDelayCounter, feetDelayCounter;

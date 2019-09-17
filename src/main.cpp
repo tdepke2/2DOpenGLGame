@@ -69,7 +69,7 @@ list<Projectile> projectiles;
 TileMap levelMap, textBottomMap, textCenterMap, textTopMap;
 vector<vector<glm::vec2>> levelPositionsData;
 Item pistolItem, rifleItem, shotgunItem;
-list<Item> itemDrops;
+list<Item*> itemDrops;
 vector<Animation> playerBodyAnimations, playerFeetAnimations, enemyAnimations;
 pair<GLint, glm::uvec2> spriteTextures, fontTexture;
 vector<pair<int, int>> weaponAmmo, maximumAmmo;
@@ -255,19 +255,19 @@ void loadResources() {    // Load file resources for textures/fonts/etc.
     cout << "\n    Building level...";
     levelPositionsData = levelMap.loadMap("levels/level0.csv", loadTexture("desert_tileset.png"), glm::uvec2(32, 32));
     
-    pistolItem = Item(spriteTextures, levelPositionsData[2][0], glm::vec2(160.0f, 80.0f), Item::PISTOL);
+    pistolItem = Item(spriteTextures, levelPositionsData[2][0], glm::vec2(160.0f, 80.0f), Item::PISTOL, 0);
     pistolItem.labelTextMap.loadFont(fontTexture, glm::uvec2(28, 36));
     pistolItem.labelTextMap.loadText("Pistol: $10");
     pistolItem.labelTextMap.color = glm::uvec4(127, 127, 127, 255);
     pistolItem.drawLabel = true;
     
-    rifleItem = Item(spriteTextures, levelPositionsData[2][1], glm::vec2(160.0f, 80.0f), Item::RIFLE);
+    rifleItem = Item(spriteTextures, levelPositionsData[2][1], glm::vec2(160.0f, 80.0f), Item::RIFLE, 0);
     rifleItem.labelTextMap.loadFont(fontTexture, glm::uvec2(28, 36));
     rifleItem.labelTextMap.loadText("Rifle: $90");
     rifleItem.labelTextMap.color = glm::uvec4(127, 127, 127, 255);
     rifleItem.drawLabel = true;
     
-    shotgunItem = Item(spriteTextures, levelPositionsData[2][2], glm::vec2(160.0f, 80.0f), Item::SHOTGUN);
+    shotgunItem = Item(spriteTextures, levelPositionsData[2][2], glm::vec2(160.0f, 80.0f), Item::SHOTGUN, 0);
     shotgunItem.labelTextMap.loadFont(fontTexture, glm::uvec2(28, 36));
     shotgunItem.labelTextMap.loadText("Shotgun: $80");
     shotgunItem.labelTextMap.color = glm::uvec4(127, 127, 127, 255);
@@ -275,9 +275,7 @@ void loadResources() {    // Load file resources for textures/fonts/etc.
     
     textBottomMap.loadFont(fontTexture, glm::uvec2(28, 36));
     textCenterMap.loadFont(fontTexture, glm::uvec2(28, 36));
-    textCenterMap.color = glm::uvec4(255, 0, 0, 255);
     textTopMap.loadFont(fontTexture, glm::uvec2(28, 36));
-    textTopMap.color = glm::uvec4(0, 0, 255, 255);
     
     cout << "\nDone." << endl << endl;
 }
@@ -293,6 +291,9 @@ void setupGame() {
     
     enemies.clear();
     projectiles.clear();
+    for (Item* itemPtr : itemDrops) {
+        delete itemPtr;
+    }
     itemDrops.clear();
     
     maximumAmmo.clear();
@@ -305,7 +306,7 @@ void setupGame() {
     weaponAmmo.push_back(maximumAmmo[1]);
     weaponAmmo.push_back(pair<int, int>(0, 0));
     weaponAmmo.push_back(pair<int, int>(0, 0));
-    weaponCooldown.push_back(30);
+    weaponCooldown.push_back(45);
     weaponCooldown.push_back(20);
     weaponCooldown.push_back(15);
     weaponCooldown.push_back(35);
@@ -313,7 +314,9 @@ void setupGame() {
     
     textBottomMap.clearText();
     textCenterMap.clearText();
+    textCenterMap.color = glm::uvec4(255, 0, 0, 255);
     textTopMap.clearText();
+    textTopMap.color = glm::uvec4(0, 0, 255, 255);
     
     playerCash = 9999;
     playerScore = 0;
@@ -350,8 +353,8 @@ void renderScene() {
         rifleItem.draw();
         shotgunItem.draw();
         
-        for (const Item& item : itemDrops) {
-            item.draw();
+        for (const Item* itemPtr : itemDrops) {
+            itemPtr->draw();
         }
         
         for (const Projectile& projectile : projectiles) {
@@ -436,7 +439,7 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
         accel.x += 0.2f;
     }
     
-    float maxVelocity = 3.0f;    // Move player.
+    float maxVelocity = (player.getBody() % 4 == 2 ? 2.0f : 3.0f);    // Move player.
     if (accel.x != 0.0f) {
         if (accel.x < 0.0f) {
             player.velocity.x = max(player.velocity.x + accel.x, -maxVelocity);
@@ -505,13 +508,11 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && weaponCooldownCounter == 0 && (weaponAmmo[player.getBody() / 4].first > 0 || player.getBody() / 4 == 0)) {    // Check for weapon fire.
         if (player.getBody() / 4 == 0) {    // Attack with knife.
             for (Enemy& enemy : enemies) {
-                if (enemy.health > 0 && enemy.iFrames <= 0 && checkCollisionAABB(player.position - player.getHitbox() * 0.5f, player.position + player.getHitbox() * 0.5f, enemy.position - enemy.getHitbox() * 0.5f, enemy.position + enemy.getHitbox() * 0.5f)) {
-                    if (sqrt(pow(player.position.x - enemy.position.x, 2.0f) + pow(player.position.y - enemy.position.y, 2.0f)) < 80.0f) {
-                        int numPoints = enemy.applyDamage(25);
-                        playerCash += numPoints;
-                        playerScore += numPoints * 3;
-                        break;
-                    }
+                if (enemy.health > 0 && enemy.iFrames <= 0 && checkCollisionAABBDistance(player.position, player.getHitbox(), enemy.position, enemy.getHitbox()) < 80.0f) {
+                    int numPoints = enemy.applyDamage(25);
+                    playerCash += numPoints;
+                    playerScore += numPoints * 3;
+                    break;
                 }
             }
         } else {    // Attack with gun.
@@ -582,17 +583,35 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
             }
             if (enemyIter->health > 0) {
                 enemiesAlive = true;
+            } else if (enemyIter->itemDropPtr != nullptr) {
+                itemDrops.push_back(enemyIter->itemDropPtr);
+                itemDrops.back()->position = enemyIter->position;
+                enemyIter->itemDropPtr = nullptr;
             }
             ++enemyIter;
         }
     }
     
-    for (auto itemIter = itemDrops.begin(); itemIter != itemDrops.end();) {
-        if (itemIter->lifespan <= 0) {
-            itemIter = itemDrops.erase(itemIter);
+    for (auto itemPtrIter = itemDrops.begin(); itemPtrIter != itemDrops.end();) {
+        if ((*itemPtrIter)->lifespan <= 0) {
+            delete (*itemPtrIter);
+            itemPtrIter = itemDrops.erase(itemPtrIter);
+        } else if (checkCollisionAABBDistance((*itemPtrIter)->position, (*itemPtrIter)->size, player.position, player.getHitbox()) < 50.0f) {
+            if ((*itemPtrIter)->type == Item::HEALTH && player.health < 100) {
+                player.health = min(player.health + 50, 100);
+                delete (*itemPtrIter);
+                itemPtrIter = itemDrops.erase(itemPtrIter);
+            } else if ((*itemPtrIter)->type == Item::AMMO && (weaponAmmo[player.getBody() / 4].first < maximumAmmo[player.getBody() / 4].first || weaponAmmo[player.getBody() / 4].second < maximumAmmo[player.getBody() / 4].second)) {
+                weaponAmmo[player.getBody() / 4].first = maximumAmmo[player.getBody() / 4].first;
+                weaponAmmo[player.getBody() / 4].second = maximumAmmo[player.getBody() / 4].second;
+                delete (*itemPtrIter);
+                itemPtrIter = itemDrops.erase(itemPtrIter);
+            } else {
+                ++itemPtrIter;
+            }
         } else {
-            itemIter->update();
-            ++itemIter;
+            (*itemPtrIter)->update();
+            ++itemPtrIter;
         }
     }
     
@@ -602,14 +621,15 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
     if (redFlashAlpha > 0) {
         redFlashAlpha = max(redFlashAlpha - 10, 0);
     }
-    if (player.health <= 0) {
+    if (player.health <= 0) {    // Check game over (should occur after text updates for score/health).
         gameOver = true;
         textCenterMap.clearText();
+        textCenterMap.color = glm::uvec4(0, 0, 0, 255);
         textCenterMap.loadText("Game Over\n(press enter)");
         return;
     }
     
-    if (enemiesRemaining <= 0 && !enemiesAlive) {
+    if (enemiesRemaining <= 0 && !enemiesAlive) {    // Check for round updates.
         if (startOfRoundCooldown <= 0) {
             nextRound();
         } else {
@@ -627,11 +647,23 @@ void nextTick(GLFWwindow* window) {    // Update simulation objects.
             enemies.back().setBody(0);
             enemies.back().position = levelPositionsData[1][rand() % levelPositionsData[1].size()];
             enemies.back().setScale(0.5f);
-            enemies.back().health = 20 + static_cast<int>(2.0f * roundNumber);
             enemies.back().iFramesMax = 5;
             enemies.back().targetPtr = &player;
+            
+            enemies.back().health = 20 + static_cast<int>(2.0f * roundNumber);
             enemies.back().speed = 2.0f + 2.0f * static_cast<float>(rand()) / RAND_MAX + 0.2f * sqrt(static_cast<float>(roundNumber));
             enemies.back().damage = 20 + static_cast<int>(2.0f * roundNumber);
+            if (static_cast<float>(rand()) / RAND_MAX < (roundNumber % 10 == 0 ? 0.5f : 0.02f)) {    // Rare zombie varient.
+                enemies.back().color = glm::uvec4(98, 142, 209, 255);
+                enemies.back().setScale(0.7f);
+                enemies.back().health *= 4;
+                enemies.back().speed += 1.0f;
+            }
+            if (static_cast<float>(rand()) / RAND_MAX < 0.2f / sqrt(static_cast<float>(roundNumber))) {    // Item drops.
+                enemies.back().itemDropPtr = new Item(spriteTextures, glm::vec2(0.0f, 0.0f), glm::vec2(50.0f, 50.0f), Item::HEALTH, 600);
+            } else if (static_cast<float>(rand()) / RAND_MAX < 0.05f / sqrt(static_cast<float>(roundNumber))) {
+                enemies.back().itemDropPtr = new Item(spriteTextures, glm::vec2(0.0f, 0.0f), glm::vec2(50.0f, 50.0f), Item::AMMO, 600);
+            }
             --enemiesRemaining;
             roundCooldownCounter = static_cast<int>((10.0f + 5.0f * static_cast<float>(rand()) / RAND_MAX) / (0.1f * roundNumber));
         }

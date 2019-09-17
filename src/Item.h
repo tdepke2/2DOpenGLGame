@@ -17,7 +17,7 @@ class Item : public TextureRect {
     int lifespan;
     
     Item();
-    Item(const pair<GLint, glm::uvec2>& texture, const glm::vec2& position, const glm::vec2& size, Type type);
+    Item(const pair<GLint, glm::uvec2>& texture, const glm::vec2& position, const glm::vec2& size, Type type, int lifespan);
     void update();
     void draw() const;
 };

@@ -9,17 +9,13 @@ Projectile::Projectile() {
 
 int Projectile::update(list<Enemy>& targets) {
     int numPoints = 0;
-    glm::vec2 bottomLeft(position.x - size.x * 0.5f, position.y - size.x * 0.5f);
-    glm::vec2 topRight(position.x + size.x * 0.5f, position.y + size.x * 0.5f);
     for (Enemy& enemy : targets) {
-        if (enemy.health > 0 && enemy.iFrames <= 0 && checkCollisionAABB(bottomLeft, topRight, enemy.position - enemy.getHitbox() * 0.5f, enemy.position + enemy.getHitbox() * 0.5f)) {
-            if (sqrt(pow(position.x - enemy.position.x, 2.0f) + pow(position.y - enemy.position.y, 2.0f)) < 50.0f) {
-                numPoints += enemy.applyDamage(damage);
-                health -= damage;
-                if (health <= 0) {
-                    lifespan = 0;
-                    return numPoints;
-                }
+        if (enemy.health > 0 && enemy.iFrames <= 0 && checkCollisionAABBDistance(position, glm::vec2(size.x, size.x), enemy.position, enemy.getHitbox()) < 50.0f) {
+            numPoints += enemy.applyDamage(damage);
+            health -= damage;
+            if (health <= 0) {
+                lifespan = 0;
+                return numPoints;
             }
         }
     }

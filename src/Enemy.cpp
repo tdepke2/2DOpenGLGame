@@ -10,14 +10,16 @@ using namespace std;
 
 Enemy::Enemy() {
     targetPtr = nullptr;
+    itemDropPtr = nullptr;
     lifespan = 1000;
 }
 
+Enemy::~Enemy() {
+    delete itemDropPtr;
+}
+
 bool Enemy::isTouchingCharacter(const Character* character) const {
-    if (checkCollisionAABB(position - getHitbox() * 0.5f, position + getHitbox() * 0.5f, character->position - character->getHitbox() * 0.5f, character->position + character->getHitbox() * 0.5f)) {
-        return (sqrt(pow(position.x - character->position.x, 2.0f) + pow(position.y - character->position.y, 2.0f)) < 50.0f);
-    }
-    return false;
+    return checkCollisionAABBDistance(position, getHitbox(), character->position, character->getHitbox()) < 50.0f;
 }
 
 int Enemy::applyDamage(int damage) {
@@ -62,6 +64,9 @@ int Enemy::update() {
         }
     } else {
         --lifespan;
+        if (lifespan < 255) {
+            color.a = lifespan;
+        }
     }
     return damageDealt;
 }
